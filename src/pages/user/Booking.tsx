@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaUsers, FaMoneyBillWave, FaMapMarkerAlt } from 'react-icons/fa';
-import MainLayout from '../../components/layout/MainLayout';
+import { FaCalendarAlt, FaUsers, FaMoneyBillWave, FaMapMarkerAlt, FaCreditCard } from 'react-icons/fa';
 import tourService from '../../services/tourService';
 import { Tour } from '../../types/tour';
-import bookingService from '../../services/bookingService';
-import { PaymentMethod } from '../../services/bookingService';
+import bookingService, { PaymentMethod } from '../../services/bookingService';
+import StripePayment from '../../components/payment/StripePayment';
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -136,6 +135,52 @@ const ErrorMessage = styled.div`
   font-size: ${props => props.theme.fontSizes.sm};
 `;
 
+const PaymentMethodContainer = styled.div`
+  margin-top: ${props => props.theme.spacing.base};
+`;
+
+const PaymentMethodOption = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${props => props.theme.spacing.sm};
+  margin-bottom: ${props => props.theme.spacing.sm};
+  padding: ${props => props.theme.spacing.sm};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  cursor: pointer;
+  transition: all ${props => props.theme.animations.fast};
+
+  &:hover {
+    background-color: ${props => props.theme.colors.background};
+  }
+
+  &.selected {
+    border-color: ${props => props.theme.colors.primary};
+    background-color: ${props => props.theme.colors.background};
+  }
+`;
+
+const PaymentMethodIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: ${props => props.theme.colors.surface};
+  color: ${props => props.theme.colors.primary};
+`;
+
+const PaymentMethodLabel = styled.div`
+  font-weight: 500;
+`;
+
+const PaymentMethodDescription = styled.div`
+  font-size: ${props => props.theme.fontSizes.sm};
+  color: ${props => props.theme.colors.muted};
+  margin-top: ${props => props.theme.spacing.xs};
+`;
+
 const Booking = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -147,6 +192,8 @@ const Booking = () => {
     people: 1,
     paymentMethod: 'vnpay' as PaymentMethod
   });
+  const [showStripePayment, setShowStripePayment] = useState(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTour = async () => {
@@ -193,7 +240,7 @@ const Booking = () => {
       // Calculate end date
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + Number(tour.duration));
-      
+
       if (isNaN(endDate.getTime())) {
         setError('Không thể tính ngày kết thúc');
         return;
@@ -215,24 +262,58 @@ const Booking = () => {
         return;
       }
 
+      // Calculate total amount and ensure it's a number
+      const totalAmount = Number(tour.price) * Number(formData.people);
+      if (isNaN(totalAmount) || totalAmount <= 0) {
+        setError('Số tiền thanh toán không hợp lệ');
+        return;
+      }
+
       const bookingData = {
         tour: id,
         schedules: [{
           startDate: formattedStartDate,
           endDate: formattedEndDate
         }],
-        peopleCount: formData.people,
-        paymentMethod: formData.paymentMethod
+        peopleCount: Number(formData.people),
+        paymentMethod: formData.paymentMethod,
+        totalAmount: totalAmount,
+        currency: 'vnd'
       };
 
-      console.log('Booking data being sent:', bookingData);
-      console.log('Tour duration:', tour.duration);
-      console.log('Start date:', formattedStartDate);
-      console.log('End date:', formattedEndDate);
+      console.log('Booking data being sent:', JSON.stringify(bookingData, null, 2));
+      console.log('Tour price:', tour.price);
+      console.log('People count:', formData.people);
+      console.log('Total amount:', totalAmount);
 
-      const response = await bookingService.createBooking(bookingData);
-      console.log('Booking response:', response);
-      navigate('/bookings');
+      // If payment method is Stripe, create a booking and show Stripe payment
+      if (formData.paymentMethod === 'stripe') {
+        try {
+          const response = await bookingService.createBooking(bookingData);
+          console.log('Booking response:', response);
+          setBookingId(response.data._id);
+          setShowStripePayment(true);
+          return;
+        } catch (err: any) {
+          console.error('Stripe booking error:', err);
+          setError(err.message || 'Lỗi khi tạo booking cho thanh toán Stripe');
+          return;
+        }
+      }
+
+      // For other payment methods, proceed with normal flow
+      try {
+        const response = await bookingService.createBooking(bookingData);
+        console.log('Booking response:', response);
+
+        // Show success message using a more reliable method
+        if (window.confirm('Đặt tour thành công! Bạn có muốn xem danh sách tour không?')) {
+          window.location.href = '/tours';
+        }
+      } catch (err: any) {
+        console.error('Regular booking error:', err);
+        setError(err.message || 'Không thể đặt tour. Vui lòng thử lại sau.');
+      }
     } catch (err: any) {
       console.error('Detailed error:', err);
       setError(err.message || 'Không thể đặt tour. Vui lòng thử lại sau.');
@@ -247,102 +328,162 @@ const Booking = () => {
     }));
   };
 
+  const handleStripeSuccess = (_bookingId: string) => {
+    // Navigate to tours page using the correct path
+    window.location.href = '/tours';
+  };
+
+  const handleStripeError = (error: string) => {
+    setError(error);
+  };
+
   if (loading) {
     return (
-      <MainLayout>
-        <PageWrapper>
-          <Container>
-            <Title>Đang tải...</Title>
-          </Container>
-        </PageWrapper>
-      </MainLayout>
+      <PageWrapper>
+        <Container>
+          <Title>Đang tải...</Title>
+        </Container>
+      </PageWrapper>
     );
   }
 
   if (error || !tour) {
     return (
-      <MainLayout>
-        <PageWrapper>
-          <Container>
-            <Title>Lỗi</Title>
-            <p>{error}</p>
-          </Container>
-        </PageWrapper>
-      </MainLayout>
+      <PageWrapper>
+        <Container>
+          <Title>Lỗi</Title>
+          <p>{error}</p>
+        </Container>
+      </PageWrapper>
     );
   }
 
   return (
-    <MainLayout>
-      <PageWrapper>
-        <Container>
-          <TourInfo>
-            <TourImage src={tour.image} alt={tour.name} />
-            <Title>{tour.name}</Title>
-            <TourDetails>
-              <DetailItem>
-                <FaMapMarkerAlt />
-                <span>{tour.location}</span>
-              </DetailItem>
-              <DetailItem>
-                <FaCalendarAlt />
-                <span>{tour.duration} ngày</span>
-              </DetailItem>
-              <DetailItem>
-                <FaUsers />
-                <span>Số người tối đa: {tour.groupSize}</span>
-              </DetailItem>
-              <DetailItem>
-                <FaMoneyBillWave />
-                <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.price)}</span>
-              </DetailItem>
-            </TourDetails>
-            <p>{tour.description}</p>
-          </TourInfo>
+    <PageWrapper>
+      <Container>
+        <TourInfo>
+          <TourImage src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/300x200?text=No+Image'} alt={tour.title} />
+          <Title>{tour.title}</Title>
+          <TourDetails>
+            <DetailItem>
+              <FaMapMarkerAlt />
+              <span>{tour.destination.join(', ')}</span>
+            </DetailItem>
+            <DetailItem>
+              <FaCalendarAlt />
+              <span>{tour.duration} ngày</span>
+            </DetailItem>
+            <DetailItem>
+              <FaUsers />
+              <span>Số người tối đa: {tour.maxPeople}</span>
+            </DetailItem>
+            <DetailItem>
+              <FaMoneyBillWave />
+              <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.price)}</span>
+            </DetailItem>
+          </TourDetails>
+          <p>{tour.description}</p>
+        </TourInfo>
 
-          <BookingForm onSubmit={handleSubmit}>
-            <Title>Đặt tour</Title>
-            <FormGroup>
-              <Label>Ngày khởi hành</Label>
-              <Input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                required
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Số người</Label>
-              <Input
-                type="number"
-                name="people"
-                value={formData.people}
-                onChange={handleChange}
-                min="1"
-                max={tour.groupSize}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Phương thức thanh toán</Label>
-              <Select
-                name="paymentMethod"
-                value={formData.paymentMethod}
-                onChange={handleChange}
-                required
+        <BookingForm onSubmit={handleSubmit}>
+          <Title>Đặt tour</Title>
+          <FormGroup>
+            <Label>Ngày khởi hành</Label>
+            <Input
+              type="date"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleChange}
+              required
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>Số người</Label>
+            <Input
+              type="number"
+              name="people"
+              value={formData.people}
+              onChange={handleChange}
+              min="1"
+              max={tour.maxPeople}
+              required
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>Phương thức thanh toán</Label>
+            <PaymentMethodContainer>
+              <PaymentMethodOption
+                className={formData.paymentMethod === 'vnpay' ? 'selected' : ''}
+                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'vnpay' }))}
               >
-                <option value="vnpay">VNPay</option>
-                <option value="momo">MoMo</option>
-              </Select>
-            </FormGroup>
-            {error && <ErrorMessage>{error}</ErrorMessage>}
-            <SubmitButton type="submit">Đặt tour</SubmitButton>
-          </BookingForm>
-        </Container>
-      </PageWrapper>
-    </MainLayout>
+                <PaymentMethodIcon>
+                  <FaMoneyBillWave />
+                </PaymentMethodIcon>
+                <div>
+                  <PaymentMethodLabel>VNPay</PaymentMethodLabel>
+                  <PaymentMethodDescription>Thanh toán qua cổng VNPay</PaymentMethodDescription>
+                </div>
+              </PaymentMethodOption>
+
+              <PaymentMethodOption
+                className={formData.paymentMethod === 'momo' ? 'selected' : ''}
+                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'momo' }))}
+              >
+                <PaymentMethodIcon>
+                  <FaMoneyBillWave />
+                </PaymentMethodIcon>
+                <div>
+                  <PaymentMethodLabel>MoMo</PaymentMethodLabel>
+                  <PaymentMethodDescription>Thanh toán qua ví MoMo</PaymentMethodDescription>
+                </div>
+              </PaymentMethodOption>
+
+              <PaymentMethodOption
+                className={formData.paymentMethod === 'stripe' ? 'selected' : ''}
+                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'stripe' }))}
+              >
+                <PaymentMethodIcon>
+                  <FaCreditCard />
+                </PaymentMethodIcon>
+                <div>
+                  <PaymentMethodLabel>Stripe</PaymentMethodLabel>
+                  <PaymentMethodDescription>Thanh toán bằng thẻ tín dụng/ghi nợ</PaymentMethodDescription>
+                </div>
+              </PaymentMethodOption>
+            </PaymentMethodContainer>
+          </FormGroup>
+          {error && <ErrorMessage>{error}</ErrorMessage>}
+
+          {showStripePayment && bookingId ? (
+            <StripePayment
+              bookingData={{
+                tour: id!,
+                schedules: [{
+                  startDate: formData.startDate,
+                  endDate: new Date(new Date(formData.startDate).getTime() + Number(tour.duration) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                }],
+                peopleCount: formData.people,
+                paymentMethod: 'stripe',
+                totalAmount: Number(tour.price) * Number(formData.people)
+              }}
+              onSuccess={handleStripeSuccess}
+              onError={handleStripeError}
+            />
+          ) : (
+            <SubmitButton
+              type="submit"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit(e);
+              }}
+            >
+              <a href="/tours" style={{ color: 'white', textDecoration: 'none' }}>Đặt tour</a>
+            </SubmitButton>
+          )}
+        </BookingForm>
+      </Container>
+    </PageWrapper>
   );
 };
 

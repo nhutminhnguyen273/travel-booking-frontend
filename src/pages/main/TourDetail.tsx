@@ -190,6 +190,13 @@ const ItineraryList = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
+const TourPrice = styled.div`
+  font-size: ${({ theme }) => theme.fontSizes.xl};
+  font-weight: bold;
+  color: ${({ theme }) => theme.colors.primary};
+  margin: ${({ theme }) => theme.spacing.base} 0;
+`;
+
 const ErrorFallback = ({ error }: { error: Error }) => {
   return (
     <div>
@@ -247,70 +254,96 @@ const TourDetailContent: React.FC = () => {
     );
   }
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <Wrapper>
       <TourDetailContainer>
         <TourHeader>
-          <TourTitle>{tour.name}</TourTitle>
+          <TourTitle>{tour.title}</TourTitle>
           
           <TourLocation>
             <FaMapMarkerAlt />
-            <span>{tour.location}</span>
+            <span>{tour.destination.join(', ')}</span>
           </TourLocation>
-          
-          <TourRating>
-            <FaStar />
-            <span>{tour.rating}</span>
-          </TourRating>
         </TourHeader>
 
-        <TourImage src={tour.image} alt={tour.name} />
+        <TourImage src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/800x400?text=No+Image'} alt={tour.title} />
 
         <TourGrid>
           <TourContent>
             <TourDescription>{tour.description}</TourDescription>
 
-            <SectionTitle>Tour Itinerary</SectionTitle>
+            <SectionTitle>Lịch trình tour</SectionTitle>
             <ItineraryList>
-              {tour.itinerary.map((day, index) => (
+              {tour.itinerary && tour.itinerary.map((day, index) => (
                 <ItineraryItem key={index}>
-                  <ItineraryDay>{day.day}</ItineraryDay>
+                  <ItineraryDay>Ngày {day.day}</ItineraryDay>
                   <ItineraryTitle>{day.title}</ItineraryTitle>
                   <ItineraryDescription>{day.description}</ItineraryDescription>
                 </ItineraryItem>
               ))}
             </ItineraryList>
 
-            <SectionTitle>What's Included</SectionTitle>
-            <IncludedList>
-              {tour.includes.map((item, index) => (
-                <IncludedItem key={index}>
-                  <FaCheck />
-                  <span>{item}</span>
-                </IncludedItem>
+            <SectionTitle>Lịch khởi hành</SectionTitle>
+            <ItineraryList>
+              {tour.schedules && tour.schedules.map((schedule, index) => (
+                <ItineraryItem key={index}>
+                  <ItineraryTitle>Đợt {index + 1}</ItineraryTitle>
+                  <ItineraryDescription>
+                    Khởi hành: {formatDate(schedule.startDate.toString())}<br />
+                    Kết thúc: {formatDate(schedule.endDate.toString())}
+                  </ItineraryDescription>
+                </ItineraryItem>
               ))}
-            </IncludedList>
+            </ItineraryList>
           </TourContent>
 
           <TourSidebar>
             <TourInfoCard>
               <InfoItem>
                 <FaCalendarAlt />
-                <span>Duration: {tour.duration}</span>
+                <span>Thời gian: {tour.duration} ngày</span>
               </InfoItem>
               
               <InfoItem>
                 <FaUsers />
-                <span>Group Size: {tour.groupSize}</span>
+                <span>Số người tối đa: {tour.maxPeople}</span>
               </InfoItem>
               
               <InfoItem>
                 <FaUsers />
-                <span>Remaining Seats: {tour.remainingSeats}</span>
+                <span>Còn lại: {tour.remainingSeats} chỗ</span>
               </InfoItem>
+              
+              <InfoItem>
+                <FaMapMarkerAlt />
+                <span>Loại tour: {tour.type === 'domestic' ? 'Trong nước' : 'Quốc tế'}</span>
+              </InfoItem>
+              
+              <InfoItem>
+                <FaCheck />
+                <span>Trạng thái: {tour.status === 'available' ? 'Còn chỗ' : 'Hết chỗ'}</span>
+              </InfoItem>
+              
+              <TourPrice>{formatPrice(tour.price)}</TourPrice>
               
               <BookButton onClick={() => navigate(`/booking/${tour._id}`)}>
-                Book Now
+                Đặt ngay
               </BookButton>
             </TourInfoCard>
           </TourSidebar>

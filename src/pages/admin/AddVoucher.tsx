@@ -293,7 +293,7 @@ const AddVoucher: React.FC = () => {
           >
             {tours.map(tour => (
               <option key={tour._id} value={tour._id}>
-                {tour.name}
+                {tour.title}
               </option>
             ))}
           </Select>

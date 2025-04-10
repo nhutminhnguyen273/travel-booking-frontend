@@ -1,6 +1,6 @@
 import axiosInstance from '../config/axios';
 
-export type PaymentMethod = 'vnpay' | 'momo';
+export type PaymentMethod = 'vnpay' | 'momo' | 'stripe';
 
 export interface BookingData {
   tour: string;
@@ -10,6 +10,8 @@ export interface BookingData {
   }[];
   peopleCount: number;
   paymentMethod: PaymentMethod;
+  totalAmount: number;
+  currency?: string;
 }
 
 export interface Booking extends BookingData {
@@ -19,6 +21,12 @@ export interface Booking extends BookingData {
   paymentStatus: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StripePaymentIntent {
+  clientSecret: string;
+  totalAmount: number;
+  currency: string;
 }
 
 const bookingService = {
@@ -42,6 +50,31 @@ const bookingService = {
                 console.error('Error setting up request:', error.message);
                 throw new Error('Lỗi khi gửi yêu cầu đặt tour');
             }
+        }
+    },
+
+    // Create a Stripe payment intent
+    createStripePaymentIntent: async (bookingData: BookingData): Promise<StripePaymentIntent> => {
+        try {
+            const response = await axiosInstance.post('/booking/stripe/create-payment-intent', bookingData);
+            return response.data;
+        } catch (error: any) {
+            console.error('Error creating Stripe payment intent:', error);
+            throw new Error(error.response?.data?.message || 'Lỗi khi tạo thanh toán Stripe');
+        }
+    },
+
+    // Confirm a Stripe payment
+    confirmStripePayment: async (bookingId: string, paymentIntentId: string) => {
+        try {
+            const response = await axiosInstance.post('/booking/stripe/confirm', {
+                bookingId,
+                paymentIntentId
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('Error confirming Stripe payment:', error);
+            throw new Error(error.response?.data?.message || 'Lỗi khi xác nhận thanh toán Stripe');
         }
     },
 

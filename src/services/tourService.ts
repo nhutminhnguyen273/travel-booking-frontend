@@ -30,25 +30,9 @@ const tourService = {
     // Create new tour
     createTour: async (tour: Omit<Tour, '_id'>, imageFiles?: ImageFiles): Promise<Tour> => {
         try {
-            const formData = new FormData();
-            
-            // Append tour data as JSON string
-            formData.append('data', JSON.stringify(tour));
-            
-            // Append image files if provided
-            if (imageFiles?.image) {
-                formData.append('image', imageFiles.image);
-            }
-            
-            if (imageFiles?.gallery && imageFiles.gallery.length > 0) {
-                imageFiles.gallery.forEach((file) => {
-                    formData.append('gallery', file);
-                });
-            }
-
-            const response = await axiosInstance.post<Tour>('/tours', formData, {
+            const response = await axiosInstance.post<Tour>('/tours', tour, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'Content-Type': 'application/json',
                 },
             });
             return response.data;

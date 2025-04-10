@@ -129,6 +129,7 @@ const ErrorMessage = styled.div`
 
 const Profile = () => {
   const [formData, setFormData] = useState<User>({
+    _id: '',
     username: '',
     fullName: '',
     dateOfBirth: formatDateInput(new Date()),

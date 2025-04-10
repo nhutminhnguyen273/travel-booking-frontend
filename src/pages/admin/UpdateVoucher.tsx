@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
-import AdminLayout from '../../components/layout/AdminLayout';
 import voucherService, { UpdateVoucherData } from '../../services/voucherService';
 import tourService from '../../services/tourService';
 import { Tour } from '../../types/tour';
@@ -103,7 +102,7 @@ const LoadingMessage = styled.div`
   color: ${props => props.theme.colors.text};
 `;
 
-const UpdateVoucher: React.FC = () => {
+const UpdateVoucherContent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -204,20 +203,13 @@ const UpdateVoucher: React.FC = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <Wrapper>
-          <LoadingMessage>Loading voucher data...</LoadingMessage>
-        </Wrapper>
-      </AdminLayout>
+      <LoadingMessage>Loading voucher data...</LoadingMessage>
     );
   }
 
   return (
     <Wrapper>
-      <Header>
-        <Title>Update Voucher</Title>
-      </Header>
-
+      <Title>Update Voucher</Title>
       <Form onSubmit={handleSubmit}>
         <FormGroup>
           <Label htmlFor="code">Voucher Code</Label>
@@ -361,4 +353,4 @@ const UpdateVoucher: React.FC = () => {
   );
 };
 
-export default UpdateVoucher; 
+export default UpdateVoucherContent; 

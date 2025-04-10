@@ -10,6 +10,8 @@ const theme = {
         border: '#e0e0e0', // Viền
         error: '#e74c3c', // Thông báo lỗi
         success: '#2ecc71', // Thành công
+        warning: '#f39c12', // Cảnh báo
+        info: '#3498db', // Thông tin
         gradient: {
             primary: 'linear-gradient(to right, #0077cc, #00b894)',
             secondary: 'linear-gradient(to right, #ff7f50, #ffbe76)'

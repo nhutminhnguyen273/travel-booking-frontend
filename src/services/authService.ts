@@ -41,7 +41,6 @@ const authService = {
     },
 
     logout: (): void => {
-        console.log('Logging out - clearing cookies');
         Cookies.remove('token');
         Cookies.remove('user');
     },

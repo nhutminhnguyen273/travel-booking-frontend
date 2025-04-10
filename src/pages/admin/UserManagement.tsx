@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { FaUserPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import userService from '../../services/userService';
+import { User } from '../../types/user';
 
 const Wrapper = styled.div`
   padding: ${(props) => props.theme.spacing.lg};
@@ -48,11 +51,17 @@ const Table = styled.table`
     padding: ${(props) => props.theme.spacing.sm};
     border-bottom: 1px solid ${(props) => props.theme.colors.border};
     text-align: left;
+    color: ${(props) => props.theme.colors.text};
   }
 
   th {
     background-color: ${(props) => props.theme.colors.background};
     font-weight: bold;
+    color: ${(props) => props.theme.colors.primary};
+  }
+
+  tr:hover {
+    background-color: ${(props) => props.theme.colors.background};
   }
 `;
 
@@ -75,19 +84,71 @@ const ActionButton = styled.button<{ color: string }>`
 
 const UserManagement: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Giả dữ liệu
-  const users = [
-    { id: 1, name: 'Nguyễn Văn A', email: 'a@gmail.com', role: 'Admin' },
-    { id: 2, name: 'Trần Thị B', email: 'b@gmail.com', role: 'User' },
-    { id: 3, name: 'Lê Văn C', email: 'c@gmail.com', role: 'User' },
-  ];
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await userService.getAllUsers();
+      setUsers(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách người dùng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+      try {
+        await userService.deleteUser(id);
+        setUsers(users.filter(user => user._id !== id));
+        setError(null);
+      } catch (err: any) {
+        setError(err.message || 'Không thể xóa người dùng');
+      }
+    }
+  };
+
+  const handleEditUser = (id: string) => {
+    navigate(`/admin/users/edit/${id}`);
+  };
+
+  const handleAddUser = () => {
+    navigate('/admin/users/add');
+  };
+
+  if (loading) {
+    return <Wrapper>Đang tải...</Wrapper>;
+  }
+
+  if (error) {
+    return <Wrapper>Lỗi: {error}</Wrapper>;
+  }
+
+  if (!users || users.length === 0) {
+    return <Wrapper>
+      <Heading>Quản Lý Người Dùng</Heading>
+      <p>Không có người dùng nào.</p>
+      <AddButton onClick={handleAddUser}>
+        <FaUserPlus /> Thêm Người Dùng
+      </AddButton>
+    </Wrapper>;
+  }
 
   return (
     <Wrapper>
       <Heading>Quản Lý Người Dùng</Heading>
 
-      <AddButton>
+      <AddButton onClick={handleAddUser}>
         <FaUserPlus /> Thêm Người Dùng
       </AddButton>
 
@@ -96,24 +157,34 @@ const UserManagement: React.FC = () => {
           <thead>
             <tr>
               <th>#</th>
-              <th>Họ Tên</th>
+              <th>Tên đăng nhập</th>
+              <th>Họ và tên</th>
               <th>Email</th>
-              <th>Vai Trò</th>
+              <th>Số điện thoại</th>
+              <th>Vai trò</th>
               <th>Hành Động</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user, index) => (
-              <tr key={user.id}>
+              <tr key={user._id}>
                 <td>{index + 1}</td>
-                <td>{user.name}</td>
+                <td>{user.username}</td>
+                <td>{user.fullName}</td>
                 <td>{user.email}</td>
+                <td>{user.phone}</td>
                 <td>{user.role}</td>
                 <td>
-                  <ActionButton color={theme.colors.secondary}>
+                  <ActionButton 
+                    color={theme.colors.secondary}
+                    onClick={() => handleEditUser(user._id)}
+                  >
                     <FaEdit /> Sửa
                   </ActionButton>
-                  <ActionButton color={theme.colors.error}>
+                  <ActionButton 
+                    color={theme.colors.error}
+                    onClick={() => handleDeleteUser(user._id)}
+                  >
                     <FaTrash /> Xoá
                   </ActionButton>
                 </td>

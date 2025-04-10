@@ -13,6 +13,8 @@ declare module 'styled-components' {
       border: string;
       error: string;
       success: string;
+      warning: string;
+      info: string;
       gradient: {
         primary: string;
         secondary: string;

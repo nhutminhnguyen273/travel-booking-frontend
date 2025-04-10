@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaUsers, FaPlane, FaShoppingCart, FaCog, FaTicketAlt } from 'react-icons/fa';
+import { FaHome, FaUsers, FaPlane, FaTicketAlt, FaEnvelope } from 'react-icons/fa';
 
 const SidebarContainer = styled.aside`
   width: 240px;
@@ -40,25 +40,25 @@ const AdminSidebar: React.FC = () => {
 
   return (
     <SidebarContainer>
-      <Logo>Admin Panel</Logo>
+      <Logo>Quản trị viên</Logo>
       <nav>
         <NavItem to="/admin/dashboard" $active={location.pathname === '/admin/dashboard'}>
           <FaHome /> Dashboard
         </NavItem>
         <NavItem to="/admin/users" $active={location.pathname === '/admin/users'}>
-          <FaUsers /> Users
+          <FaUsers /> Quản lý users
         </NavItem>
         <NavItem to="/admin/tours" $active={location.pathname === '/admin/tours'}>
-          <FaPlane /> Tours
+          <FaPlane /> Quản lý tours
         </NavItem>
         <NavItem to="/admin/vouchers" $active={location.pathname === '/admin/vouchers'}>
-          <FaTicketAlt /> Vouchers
+          <FaTicketAlt /> Quản lý vouchers
         </NavItem>
-        <NavItem to="/admin/orders" $active={location.pathname === '/admin/orders'}>
-          <FaShoppingCart /> Orders
+        <NavItem to="/admin/contacts" $active={location.pathname === '/admin/contacts'}>
+          <FaEnvelope /> Quản lý liên hệ
         </NavItem>
-        <NavItem to="/admin/settings" $active={location.pathname === '/admin/settings'}>
-          <FaCog /> Settings
+        <NavItem to="/admin/blogs" $active={location.pathname === '/admin/blogs'}>
+          <FaEnvelope /> Quản lý blogs
         </NavItem>
       </nav>
     </SidebarContainer>

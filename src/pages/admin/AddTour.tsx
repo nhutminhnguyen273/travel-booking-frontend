@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import tourService from '../../services/tourService';
-import { Tour } from '../../types/tour';
+import { Tour, TourType, StatusTour } from '../../types/tour';
+import { toast } from 'react-hot-toast';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import authService from '../../services/authService';
 
@@ -24,6 +25,7 @@ const Form = styled.form`
   padding: ${props => props.theme.spacing.lg};
   border-radius: ${props => props.theme.borderRadius.md};
   box-shadow: ${props => props.theme.shadows.sm};
+  max-width: 800px;
 `;
 
 const FormGroup = styled.div`
@@ -34,6 +36,7 @@ const Label = styled.label`
   display: block;
   margin-bottom: ${props => props.theme.spacing.xs};
   color: ${props => props.theme.colors.text};
+  font-weight: 500;
 `;
 
 const Input = styled.input`
@@ -42,6 +45,13 @@ const Input = styled.input`
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.sm};
   font-size: ${props => props.theme.fontSizes.base};
+  color: ${props => props.theme.colors.text};
+  background-color: white;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
 `;
 
 const TextArea = styled.textarea`
@@ -50,190 +60,204 @@ const TextArea = styled.textarea`
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.sm};
   font-size: ${props => props.theme.fontSizes.base};
+  color: ${props => props.theme.colors.text};
+  background-color: white;
   min-height: 100px;
-`;
-
-const Button = styled.button`
-  background: ${props => props.theme.colors.primary};
-  color: white;
-  border: none;
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.lg};
-  border-radius: ${props => props.theme.borderRadius.sm};
-  cursor: pointer;
-  font-weight: bold;
-  margin-top: ${props => props.theme.spacing.base};
-
-  &:hover {
-    opacity: 0.9;
+  resize: vertical;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 
-const ArrayInputContainer = styled.div`
-  margin-bottom: ${props => props.theme.spacing.base};
+const Select = styled.select`
+  width: 100%;
+  padding: ${props => props.theme.spacing.sm};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  font-size: ${props => props.theme.fontSizes.base};
+  color: ${props => props.theme.colors.text};
+  background-color: white;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
 `;
 
-const ArrayInput = styled.div`
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: ${props => props.theme.spacing.base};
+  margin-top: ${props => props.theme.spacing.lg};
+`;
+
+const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+  background: ${props => props.variant === 'secondary' ? props.theme.colors.surface : props.theme.colors.primary};
+  color: ${props => props.variant === 'secondary' ? props.theme.colors.text : 'white'};
+  border: 1px solid ${props => props.variant === 'secondary' ? props.theme.colors.border : 'transparent'};
+  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.lg};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  cursor: pointer;
+  font-weight: 500;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: ${props => props.theme.colors.error};
+  margin-top: ${props => props.theme.spacing.sm};
+  font-size: ${props => props.theme.fontSizes.sm};
+`;
+
+const DestinationInput = styled.div`
   display: flex;
   gap: ${props => props.theme.spacing.sm};
   margin-bottom: ${props => props.theme.spacing.sm};
 `;
 
-const RemoveButton = styled.button`
-  background: ${props => props.theme.colors.error};
-  color: white;
-  border: none;
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.borderRadius.sm};
-  cursor: pointer;
+const ScheduleInput = styled.div`
+  display: flex;
+  gap: ${props => props.theme.spacing.sm};
+  margin-bottom: ${props => props.theme.spacing.sm};
 `;
 
-const AddButton = styled.button`
-  background: ${props => props.theme.colors.success};
-  color: white;
-  border: none;
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.borderRadius.sm};
-  cursor: pointer;
-  margin-top: ${props => props.theme.spacing.sm};
+const ImagePreview = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
 `;
 
-const ItineraryDay = styled.div`
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.sm};
-  padding: ${props => props.theme.spacing.base};
-  margin-bottom: ${props => props.theme.spacing.base};
+const PreviewImage = styled.img`
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
 `;
 
-interface ImageFiles {
-  image?: File;
-  gallery: File[];
+interface Schedule {
+    startDate: Date;
+    endDate: Date;
 }
+
+interface ItineraryDay {
+    day: number;
+    title: string;
+    description: string;
+}
+
+interface FormData {
+    title: string;
+    description: string;
+    price: string;
+    destination: string[];
+    type: TourType;
+    duration: string;
+    schedules: Schedule[];
+    maxPeople: string;
+    remainingSeats: string;
+    images: string[];
+    itinerary: ItineraryDay[];
+    status: StatusTour;
+    isDeleted: boolean;
+}
+
+interface CreateTourData extends Omit<Tour, '_id'> {
+    price: number;
+    duration: number;
+    maxPeople: number;
+    remainingSeats: number;
+}
+
+const initialFormData: FormData = {
+    title: '',
+    description: '',
+    price: '',
+    destination: [],
+    type: TourType.DOMESTIC,
+    duration: '',
+    schedules: [],
+    maxPeople: '',
+    remainingSeats: '',
+    images: [],
+    itinerary: [],
+    status: StatusTour.Available,
+    isDeleted: false
+};
 
 const AddTourContent: React.FC = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Tour>>({
-    name: '',
-    description: '',
-    image: '',
-    gallery: [],
-    duration: '',
-    location: '',
-    groupSize: 0,
-    remainingSeats: 0,
-    rating: 0,
-    price: 0,
-    includes: [],
-    excludes: [],
-    itinerary: [],
-    isDeleted: false
-  });
+  const [formData, setFormData] = useState<FormData>(initialFormData);
 
-  const [imageFiles, setImageFiles] = useState<ImageFiles>({
-    gallery: []
-  });
-
-  useEffect(() => {
-    // Check authentication when component mounts
-    const token = authService.getToken();
-    const user = authService.getUser();
-    console.log('=== Authentication Debug ===');
-    console.log('Token:', token);
-    console.log('User from localStorage:', user);
-    console.log('User Role:', user?.role);
-    console.log('Is Admin:', user?.role === 'admin');
-    console.log('===========================');
-
-    if (!token || !user || user.role !== 'admin') {
-      setError('You need to be logged in as an admin to access this page');
-      return;
-    }
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'groupSize' || name === 'price' || name === 'rating' 
-        ? Number(value) 
-        : value
+      [name]: value
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      try {
-        // Store the file
-        setImageFiles(prev => ({
-          ...prev,
-          image: file
-        }));
-
-        // Create a preview URL
-        const previewUrl = URL.createObjectURL(file);
-        setFormData(prev => ({
-          ...prev,
-          image: previewUrl
-        }));
-      } catch (err: any) {
-        setError(err.message || 'Error handling image');
-      }
-    }
-  };
-
-  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      try {
-        const fileArray = Array.from(files);
-        
-        // Store the files
-        setImageFiles(prev => ({
-          ...prev,
-          gallery: fileArray
-        }));
-
-        // Create preview URLs
-        const previewUrls = fileArray.map(file => URL.createObjectURL(file));
-        setFormData(prev => ({
-          ...prev,
-          gallery: previewUrls
-        }));
-      } catch (err: any) {
-        setError(err.message || 'Error handling gallery images');
-      }
-    }
-  };
-
-  const handleArrayChange = (field: 'includes' | 'excludes', index: number, value: string) => {
-    const newArray = [...(formData[field] || [])];
-    newArray[index] = value;
+  const handleDestinationChange = (index: number, value: string) => {
+    const newDestinations = [...formData.destination];
+    newDestinations[index] = value;
     setFormData(prev => ({
       ...prev,
-      [field]: newArray
+      destination: newDestinations
     }));
   };
 
-  const handleAddArrayItem = (field: 'includes' | 'excludes') => {
+  const addDestination = () => {
     setFormData(prev => ({
       ...prev,
-      [field]: [...(prev[field] || []), '']
+      destination: [...prev.destination, '']
     }));
   };
 
-  const handleRemoveArrayItem = (field: 'includes' | 'excludes', index: number) => {
-    const newArray = [...(formData[field] || [])];
-    newArray.splice(index, 1);
+  const removeDestination = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      [field]: newArray
+      destination: prev.destination.filter((_, i) => i !== index)
     }));
   };
 
-  const handleItineraryChange = (index: number, field: 'day' | 'title' | 'description', value: string) => {
-    const newItinerary = [...(formData.itinerary || [])];
+  const handleScheduleChange = (index: number, field: 'startDate' | 'endDate', value: string) => {
+    const newSchedules = [...formData.schedules];
+    newSchedules[index] = {
+      ...newSchedules[index],
+      [field]: new Date(value)
+    };
+    setFormData(prev => ({
+      ...prev,
+      schedules: newSchedules
+    }));
+  };
+
+  const addSchedule = () => {
+    setFormData(prev => ({
+      ...prev,
+      schedules: [...prev.schedules, { startDate: new Date(), endDate: new Date() }]
+    }));
+  };
+
+  const removeSchedule = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      schedules: prev.schedules.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleItineraryChange = (index: number, field: 'day' | 'title' | 'description', value: string | number) => {
+    const newItinerary = [...formData.itinerary];
     newItinerary[index] = {
       ...newItinerary[index],
       [field]: value
@@ -244,307 +268,282 @@ const AddTourContent: React.FC = () => {
     }));
   };
 
-  const handleAddItineraryDay = () => {
+  const addItineraryDay = () => {
     setFormData(prev => ({
       ...prev,
-      itinerary: [...(prev.itinerary || []), { day: '', title: '', description: '' }]
+      itinerary: [...prev.itinerary, { day: prev.itinerary.length + 1, title: '', description: '' }]
     }));
   };
 
-  const handleRemoveItineraryDay = (index: number) => {
-    const newItinerary = [...(formData.itinerary || [])];
-    newItinerary.splice(index, 1);
+  const removeItineraryDay = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      itinerary: newItinerary
+      itinerary: prev.itinerary.filter((_, i) => i !== index)
     }));
   };
 
-  const handleCreateTour = async () => {
-    const token = authService.getToken();
-    const user = authService.getUser();
-    
-    if (!token) {
-      setError('You need to be logged in to create a tour');
-      return;
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const imageUrls: string[] = [];
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const imageUrl = reader.result as string;
+          imageUrls.push(imageUrl);
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, imageUrl]
+          }));
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
 
-    if (!user || user.role !== 'admin') {
-      setError('You need to be an admin to create a tour');
-      return;
-    }
-
-    // Validate required fields
-    if (!formData.name?.trim()) {
-      setError('Tour name is required');
-      return;
-    }
-    if (!formData.description?.trim()) {
-      setError('Tour description is required');
-      return;
-    }
-    if (!formData.groupSize || formData.groupSize <= 0) {
-      setError('Group size must be greater than 0');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
     try {
-      // Create the tour data with required fields
-      const tourData: Omit<Tour, '_id'> = {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        image: '', // Will be set by the backend after upload
-        gallery: [], // Will be set by the backend after upload
-        price: formData.price || 0,
-        duration: formData.duration || '',
-        location: formData.location || '',
-        groupSize: formData.groupSize,
-        remainingSeats: formData.groupSize, // Set to same as groupSize initially
-        rating: formData.rating || 0,
-        includes: formData.includes || [],
-        excludes: formData.excludes || [],
-        itinerary: formData.itinerary || [],
-        isDeleted: false
-      };
+        const tourData = {
+            title: formData.title,
+            description: formData.description,
+            price: Number(formData.price),
+            destination: formData.destination,
+            type: formData.type,
+            duration: Number(formData.duration),
+            schedules: formData.schedules.map(schedule => ({
+                startDate: schedule.startDate,
+                endDate: schedule.endDate
+            })),
+            maxPeople: Number(formData.maxPeople),
+            remainingSeats: Number(formData.remainingSeats),
+            images: formData.images,
+            itinerary: formData.itinerary.map(day => ({
+                day: day.day,
+                title: day.title,
+                description: day.description
+            })),
+            status: formData.status,
+            isDeleted: formData.isDeleted
+        };
 
-      // Create the tour with the image files
-      const response = await tourService.createTour(tourData, imageFiles);
-      
-      console.log('Tour created successfully:', response);
-      navigate('/admin/tours');
-    } catch (error: any) {
-      console.error('Error creating tour:', error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-      
-      if (error.response?.status === 401) {
-        setError('Your session has expired. Please log in again.');
-        authService.logout();
-      } else {
-        setError(error.response?.data?.message || 'Failed to create tour. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
+        await tourService.createTour(tourData);
+        toast.success('Tour created successfully');
+        navigate('/admin/tours');
+    } catch (error) {
+        console.error('Error creating tour:', error);
+        toast.error('Failed to create tour');
     }
   };
 
   return (
     <Wrapper>
-      <Heading>Add New Tour</Heading>
-      <Form>
+      <Heading>Thêm Tour Mới</Heading>
+      
+      <Form onSubmit={handleSubmit}>
         <FormGroup>
-          <Label>Tour Name</Label>
+          <Label htmlFor="title">Tên tour *</Label>
           <Input
             type="text"
-            name="name"
-            value={formData.name}
+            id="title"
+            name="title"
+            value={formData.title}
             onChange={handleChange}
             required
           />
         </FormGroup>
-
+        
         <FormGroup>
-          <Label>Description</Label>
+          <Label htmlFor="description">Mô tả *</Label>
           <TextArea
+            id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
             required
           />
         </FormGroup>
-
+        
         <FormGroup>
-          <Label>Tour Image</Label>
+          <Label htmlFor="price">Giá (VNĐ) *</Label>
           <Input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
+            type="number"
+            id="price"
+            name="price"
+            value={formData.price}
+            onChange={handleChange}
             required
           />
-          {formData.image && formData.image !== '' && (
-            <img 
-              src={formData.image} 
-              alt="Tour preview" 
-              style={{ maxWidth: '200px', marginTop: '10px' }} 
-            />
-          )}
         </FormGroup>
-
+        
         <FormGroup>
-          <Label>Gallery Images</Label>
-          <Input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleGalleryChange}
-          />
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
-            {formData.gallery?.filter(url => url && url !== '').map((url, index) => (
-              <img 
-                key={index}
-                src={url} 
-                alt={`Gallery ${index + 1}`} 
-                style={{ maxWidth: '200px' }} 
-              />
-            ))}
-          </div>
+          <Label htmlFor="type">Loại tour *</Label>
+          <Select
+            id="type"
+            name="type"
+            value={formData.type}
+            onChange={handleChange}
+            required
+          >
+            <option value={TourType.DOMESTIC}>Trong nước</option>
+            <option value={TourType.INTERNATIONAL}>Quốc tế</option>
+          </Select>
         </FormGroup>
-
+        
         <FormGroup>
-          <Label>Duration</Label>
+          <Label htmlFor="duration">Thời gian (ngày) *</Label>
           <Input
-            type="text"
+            type="number"
+            id="duration"
             name="duration"
             value={formData.duration}
             onChange={handleChange}
             required
           />
         </FormGroup>
-
+        
         <FormGroup>
-          <Label>Location</Label>
+          <Label htmlFor="maxPeople">Số người tối đa *</Label>
+          <Input
+            type="number"
+            id="maxPeople"
+            name="maxPeople"
+            value={formData.maxPeople}
+            onChange={handleChange}
+            required
+          />
+        </FormGroup>
+        
+        <FormGroup>
+          <Label htmlFor="remainingSeats">Số ghế còn lại *</Label>
+          <Input
+            type="number"
+            id="remainingSeats"
+            name="remainingSeats"
+            value={formData.remainingSeats}
+            onChange={handleChange}
+            required
+          />
+        </FormGroup>
+        
+        <FormGroup>
+          <Label>Điểm đến *</Label>
+          {formData.destination.map((dest, index) => (
+            <Input
+              key={index}
+              type="text"
+              value={dest}
+              onChange={(e) => handleDestinationChange(index, e.target.value)}
+              placeholder="Nhập điểm đến"
+              required
+            />
+          ))}
+          <Button type="button" onClick={addDestination}>
+            Thêm điểm đến
+          </Button>
+        </FormGroup>
+        
+        <FormGroup>
+          <Label>Lịch trình *</Label>
+          {formData.schedules.map((schedule, index) => (
+            <div key={index}>
+              <Input
+                type="datetime-local"
+                value={schedule.startDate.toISOString().slice(0, 16)}
+                onChange={(e) => handleScheduleChange(index, 'startDate', new Date(e.target.value).toISOString())}
+                required
+              />
+              <Input
+                type="datetime-local"
+                value={schedule.endDate.toISOString().slice(0, 16)}
+                onChange={(e) => handleScheduleChange(index, 'endDate', new Date(e.target.value).toISOString())}
+                required
+              />
+              <Button type="button" onClick={() => removeSchedule(index)}>
+                Xóa lịch trình
+              </Button>
+            </div>
+          ))}
+          <Button type="button" onClick={addSchedule}>
+            Thêm lịch trình
+          </Button>
+        </FormGroup>
+        
+        <FormGroup>
+          <Label>Hình ảnh</Label>
           <Input
             type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            required
+            value={formData.images.join(', ')}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              images: e.target.value.split(',').map(url => url.trim())
+            }))}
+            placeholder="Nhập URL hình ảnh, phân cách bằng dấu phẩy"
           />
         </FormGroup>
-
-        <FormGroup>
-          <Label>Price</Label>
-          <Input
-            type="number"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            min="0"
-            step="0.01"
-            required
-          />
-        </FormGroup>
-
-        <FormGroup>
-          <Label>Group Size</Label>
-          <Input
-            type="number"
-            name="groupSize"
-            value={formData.groupSize}
-            onChange={handleChange}
-            required
-          />
-        </FormGroup>
-
-        <FormGroup>
-          <Label>Includes</Label>
-          <ArrayInputContainer>
-            {(formData.includes || []).map((item, index) => (
-              <ArrayInput key={index}>
-                <Input
-                  type="text"
-                  value={item}
-                  onChange={(e) => handleArrayChange('includes', index, e.target.value)}
-                  placeholder="Enter included item"
-                />
-                <RemoveButton onClick={() => handleRemoveArrayItem('includes', index)}>
-                  Remove
-                </RemoveButton>
-              </ArrayInput>
-            ))}
-            <AddButton onClick={() => handleAddArrayItem('includes')}>
-              Add Include Item
-            </AddButton>
-          </ArrayInputContainer>
-        </FormGroup>
-
-        <FormGroup>
-          <Label>Excludes</Label>
-          <ArrayInputContainer>
-            {(formData.excludes || []).map((item, index) => (
-              <ArrayInput key={index}>
-                <Input
-                  type="text"
-                  value={item}
-                  onChange={(e) => handleArrayChange('excludes', index, e.target.value)}
-                  placeholder="Enter excluded item"
-                />
-                <RemoveButton onClick={() => handleRemoveArrayItem('excludes', index)}>
-                  Remove
-                </RemoveButton>
-              </ArrayInput>
-            ))}
-            <AddButton onClick={() => handleAddArrayItem('excludes')}>
-              Add Exclude Item
-            </AddButton>
-          </ArrayInputContainer>
-        </FormGroup>
-
-        <FormGroup>
-          <Label>Itinerary</Label>
-          {(formData.itinerary || []).map((day, index) => (
-            <ItineraryDay key={index}>
-              <FormGroup>
-                <Label>Day {index + 1}</Label>
-                <Input
-                  type="text"
-                  value={day.day}
-                  onChange={(e) => handleItineraryChange(index, 'day', e.target.value)}
-                  placeholder="Enter day number"
-                />
-              </FormGroup>
-              <FormGroup>
-                <Label>Title</Label>
-                <Input
-                  type="text"
-                  value={day.title}
-                  onChange={(e) => handleItineraryChange(index, 'title', e.target.value)}
-                  placeholder="Enter day title"
-                />
-              </FormGroup>
-              <FormGroup>
-                <Label>Description</Label>
-                <TextArea
-                  value={day.description}
-                  onChange={(e) => handleItineraryChange(index, 'description', e.target.value)}
-                  placeholder="Enter day description"
-                />
-              </FormGroup>
-              <RemoveButton onClick={() => handleRemoveItineraryDay(index)}>
-                Remove Day
-              </RemoveButton>
-            </ItineraryDay>
-          ))}
-          <AddButton onClick={handleAddItineraryDay}>
-            Add Itinerary Day
-          </AddButton>
-        </FormGroup>
-
-        {error && (
-          <div style={{ 
-            color: 'red', 
-            marginBottom: '1rem',
-            padding: '1rem',
-            backgroundColor: '#ffebee',
-            borderRadius: '4px'
-          }}>
-            {error}
-          </div>
-        )}
         
-        <Button 
-          type="button" 
-          onClick={handleCreateTour}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Creating...' : 'Create Tour'}
-        </Button>
+        <FormGroup>
+          <Label>Lịch trình chi tiết</Label>
+          {formData.itinerary.map((day, index) => (
+            <div key={index}>
+              <Input
+                type="number"
+                value={day.day}
+                onChange={(e) => handleItineraryChange(index, 'day', Number(e.target.value))}
+                placeholder="Số ngày"
+                required
+              />
+              <Input
+                type="text"
+                value={day.title}
+                onChange={(e) => handleItineraryChange(index, 'title', e.target.value)}
+                placeholder="Tiêu đề ngày"
+                required
+              />
+              <TextArea
+                value={day.description}
+                onChange={(e) => handleItineraryChange(index, 'description', e.target.value)}
+                placeholder="Mô tả ngày"
+                required
+              />
+              <Button type="button" onClick={() => removeItineraryDay(index)}>
+                Xóa ngày
+              </Button>
+            </div>
+          ))}
+          <Button type="button" onClick={addItineraryDay}>
+            Thêm ngày
+          </Button>
+        </FormGroup>
+        
+        <FormGroup>
+          <Label htmlFor="status">Trạng thái *</Label>
+          <Select
+            id="status"
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            required
+          >
+            <option value={StatusTour.Available}>Còn chỗ</option>
+            <option value={StatusTour.Unavailable}>Hết chỗ</option>
+          </Select>
+        </FormGroup>
+        
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        
+        <ButtonGroup>
+          <Button type="submit">Tạo tour</Button>
+          <Button 
+            type="button" 
+            variant="secondary"
+            onClick={() => navigate('/admin/tours')}
+            disabled={loading}
+          >
+            Hủy
+          </Button>
+        </ButtonGroup>
       </Form>
     </Wrapper>
   );

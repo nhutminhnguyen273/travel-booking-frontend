@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { FaEnvelope, FaPhone, FaUser, FaCalendarAlt, FaCheck, FaTimes } from 'react-icons/fa';
-import AdminLayout from '../../components/layout/AdminLayout';
-import ErrorBoundary from '../../components/ErrorBoundary';
+import { FaEnvelope, FaPhone, FaCalendarAlt, FaCheck, FaTimes } from 'react-icons/fa';
 import authService from '../../services/authService';
 import contactService from '../../services/contactService';
 
@@ -185,77 +183,70 @@ const ContactManagementContent: React.FC = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <Wrapper>
-          <LoadingMessage>Loading contacts...</LoadingMessage>
-        </Wrapper>
-      </AdminLayout>
+      <Wrapper>
+        <LoadingMessage>Loading contacts...</LoadingMessage>
+      </Wrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <Wrapper>
+        <ErrorMessage>{error}</ErrorMessage>
+      </Wrapper>
     );
   }
 
   return (
-    <AdminLayout>
-      <Wrapper>
-        <Header>
-          <Title>Contact Management</Title>
-        </Header>
+    <Wrapper>
+      <Header>
+        <Title>Contact Management</Title>
+      </Header>
+      <ContactList>
+        {contacts.map((contact) => (
+          <ContactCard key={contact._id}>
+            <ContactHeader>
+              <ContactName>{contact.name}</ContactName>
+              <ContactDate>
+                <FaCalendarAlt />
+                {formatDate(contact.createdAt)}
+              </ContactDate>
+            </ContactHeader>
 
-        {error && <ErrorMessage>{error}</ErrorMessage>}
+            <ContactInfo>
+              <InfoItem>
+                <FaEnvelope />
+                {contact.email}
+              </InfoItem>
+              <InfoItem>
+                <FaPhone />
+                {contact.phone}
+              </InfoItem>
+              <InfoItem>
+                <StatusBadge isRead={contact.isRead}>
+                  {contact.isRead ? <FaCheck /> : <FaTimes />}
+                  {contact.isRead ? 'Read' : 'Unread'}
+                </StatusBadge>
+              </InfoItem>
+            </ContactInfo>
 
-        <ContactList>
-          {contacts.map((contact) => (
-            <ContactCard key={contact._id}>
-              <ContactHeader>
-                <ContactName>{contact.name}</ContactName>
-                <ContactDate>
-                  <FaCalendarAlt />
-                  {formatDate(contact.createdAt)}
-                </ContactDate>
-              </ContactHeader>
+            <Message>{contact.message}</Message>
 
-              <ContactInfo>
-                <InfoItem>
-                  <FaEnvelope />
-                  {contact.email}
-                </InfoItem>
-                <InfoItem>
-                  <FaPhone />
-                  {contact.phone}
-                </InfoItem>
-                <InfoItem>
-                  <StatusBadge isRead={contact.isRead}>
-                    {contact.isRead ? <FaCheck /> : <FaTimes />}
-                    {contact.isRead ? 'Read' : 'Unread'}
-                  </StatusBadge>
-                </InfoItem>
-              </ContactInfo>
-
-              <Message>{contact.message}</Message>
-
-              <div>
-                {!contact.isRead && (
-                  <ActionButton onClick={() => handleMarkAsRead(contact._id)}>
-                    Mark as Read
-                  </ActionButton>
-                )}
-                <ActionButton onClick={() => handleDelete(contact._id)}>
-                  Delete
+            <div>
+              {!contact.isRead && (
+                <ActionButton onClick={() => handleMarkAsRead(contact._id)}>
+                  Mark as Read
                 </ActionButton>
-              </div>
-            </ContactCard>
-          ))}
-        </ContactList>
-      </Wrapper>
-    </AdminLayout>
+              )}
+              <ActionButton onClick={() => handleDelete(contact._id)}>
+                Delete
+              </ActionButton>
+            </div>
+          </ContactCard>
+        ))}
+      </ContactList>
+    </Wrapper>
   );
 };
 
-const ContactManagement: React.FC = () => {
-  return (
-    <ErrorBoundary>
-      <ContactManagementContent />
-    </ErrorBoundary>
-  );
-};
-
-export default ContactManagement;
+export default ContactManagementContent;

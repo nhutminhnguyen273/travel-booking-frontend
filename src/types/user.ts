@@ -1,4 +1,5 @@
 export interface User {
+    _id: string;
     username: string;
     fullName: string;
     dateOfBirth: string;
@@ -7,4 +8,5 @@ export interface User {
     phone: string;
     role: string;
     isDeleted: boolean;
+    password?: string;
 }

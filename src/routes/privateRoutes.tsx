@@ -1,6 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import authService from '../services/authService';
-import AdminLayout from '../components/layout/AdminLayout';
 import Dashboard from '../pages/admin/Dashboard';
 import UserManagement from '../pages/admin/UserManagement';
 import TourManagement from '../pages/admin/TourManagement';
@@ -16,6 +15,12 @@ import AddTour from '../pages/admin/AddTour';
 import EditTour from '../pages/admin/EditTour';
 import AddVoucher from '../pages/admin/AddVoucher';
 import UpdateVoucher from '../pages/admin/UpdateVoucher';
+import AddUser from '../pages/admin/AddUser';
+import EditUser from '../pages/admin/EditUser';
+import BlogManagement from '../pages/admin/BlogManagement';
+import AddBlog from '../pages/admin/AddBlog';
+import EditBlog from '../pages/admin/EditBlog';
+
 
 const PrivateRoutes = () => {
   const isAuthenticated = authService.isAuthenticated();
@@ -25,14 +30,7 @@ const PrivateRoutes = () => {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // Nếu người dùng là admin, chuyển hướng đến trang admin
-  if (user && user.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  return (
-    <Outlet />
-  );
+  return <Outlet />;
 };
 
 const AdminRoutes = () => {
@@ -49,11 +47,7 @@ const AdminRoutes = () => {
     return <Navigate to="/" replace />;
   }
 
-  return (
-    <AdminLayout>
-      <Outlet />
-    </AdminLayout>
-  );
+  return <Outlet />;
 };
 
 const privateRoutes = [
@@ -79,6 +73,14 @@ const privateRoutes = [
           {
             path: 'users',
             element: <UserManagement />
+          },
+          {
+            path: 'users/add',
+            element: <AddUser />
+          },
+          {
+            path: 'users/edit/:id',
+            element: <EditUser />
           },
           {
             path: 'tours',
@@ -107,6 +109,18 @@ const privateRoutes = [
           {
             path: 'contacts',
             element: <ContactManagement />
+          },
+          {
+            path: 'blogs',
+            element: <BlogManagement />
+          },
+          {
+            path: 'blogs/add',
+            element: <AddBlog />
+          },
+          {
+            path: 'blogs/edit/:id',
+            element: <EditBlog />
           }
         ]
       },

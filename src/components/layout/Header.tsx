@@ -180,10 +180,10 @@ const Header: React.FC = () => {
 
   const handleLogout = () => {
     authService.logout();
-    setIsAuthenticated(false);
-    setUser(null);
-    setDropdownOpen(false);
-    navigate('/');
+    // setIsAuthenticated(false);
+    // setUser(null);
+    // setDropdownOpen(false);
+    navigate('/auth/login');
   };
 
   return (

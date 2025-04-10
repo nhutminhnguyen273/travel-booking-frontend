@@ -37,7 +37,7 @@ const AdminHeader: React.FC = () => {
 
   const handleLogout = () => {
     authService.logout();
-    navigate('/login');
+    navigate('/auth/login');
   };
 
   return (
