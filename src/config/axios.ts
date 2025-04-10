@@ -53,7 +53,7 @@ axiosInstance.interceptors.response.use(
             Cookies.remove('token');
             Cookies.remove('user');
             // You might want to redirect to login page here
-            window.location.href = '/login';
+            window.location.href = '/auth/login';
         }
 
         // Handle CORS errors

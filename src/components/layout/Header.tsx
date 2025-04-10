@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUserCircle, FaSignOutAlt, FaCog, FaListAlt, FaHeart, FaCreditCard } from 'react-icons/fa';
+import { FaUserCircle, FaSignOutAlt, FaCog, FaListAlt, FaHeart } from 'react-icons/fa';
 import authService from '../../services/authService';
 
 const HeaderWrapper = styled.header`
@@ -132,15 +132,38 @@ const LogoutButton = styled.button`
   }
 `;
 
+const UserInfo = styled.div`
+  padding: ${(props) => props.theme.spacing.sm} ${(props) => props.theme.spacing.base};
+  border-bottom: 1px solid ${(props) => props.theme.colors.border};
+`;
+
+const UserName = styled.div`
+  font-weight: 600;
+  color: ${(props) => props.theme.colors.primary};
+`;
+
+const UserEmail = styled.div`
+  font-size: ${(props) => props.theme.fontSizes.sm};
+  color: ${(props) => props.theme.colors.muted};
+`;
+
 const Header: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check authentication status
-    setIsAuthenticated(authService.isAuthenticated());
+    const authenticated = authService.isAuthenticated();
+    setIsAuthenticated(authenticated);
+    
+    if (authenticated) {
+      // Get user information
+      const userData = authService.getUser();
+      setUser(userData);
+    }
 
     // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -158,6 +181,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     authService.logout();
     setIsAuthenticated(false);
+    setUser(null);
     setDropdownOpen(false);
     navigate('/');
   };
@@ -179,6 +203,10 @@ const Header: React.FC = () => {
                 <FaUserCircle />
               </UserIcon>
               <Dropdown $isOpen={dropdownOpen}>
+                <UserInfo>
+                  <UserName>{user?.fullName || user?.username || 'Người dùng'}</UserName>
+                  <UserEmail>{user?.email || ''}</UserEmail>
+                </UserInfo>
                 <DropdownItem to="/profile">
                   <FaUserCircle /> Tài khoản
                 </DropdownItem>
@@ -197,7 +225,7 @@ const Header: React.FC = () => {
               </Dropdown>
             </>
           ) : (
-            <AuthButton to="/login">Đăng nhập</AuthButton>
+            <AuthButton to="/auth/login">Đăng nhập</AuthButton>
           )}
         </UserSection>
       </HeaderContainer>

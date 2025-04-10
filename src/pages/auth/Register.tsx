@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
-import authService, { RegisterData } from '../../services/auth.service';
+import authService from '../../services/authService';
+import type { Register } from '../../types/auth';
 
 const RegisterContainer = styled.div`
   display: flex;
@@ -91,11 +92,19 @@ const ErrorMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
-const Register = () => {
+interface RegisterFormData extends Register {
+  confirmPassword: string;
+}
+
+const RegisterPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<RegisterData>({
+  const [formData, setFormData] = useState<RegisterFormData>({
     username: '',
+    fullName: '',
+    dateOfBirth: '',
+    gender: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -104,7 +113,7 @@ const Register = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: RegisterFormData) => ({
       ...prev,
       [name]: value
     }));
@@ -122,7 +131,8 @@ const Register = () => {
     }
 
     try {
-      await authService.register(formData);
+      const { confirmPassword, ...registerData } = formData;
+      await authService.register(registerData);
       navigate('/auth/login');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đăng ký thất bại');
@@ -192,4 +202,4 @@ const Register = () => {
   );
 };
 
-export default Register; 
+export default RegisterPage; 

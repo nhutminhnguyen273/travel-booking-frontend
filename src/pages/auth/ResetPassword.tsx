@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaLock } from 'react-icons/fa';
-import authService, { ResetPasswordData } from '../../services/auth.service';
+import authService from '../../services/authService';
 
 const ResetPasswordContainer = styled.div`
   display: flex;
@@ -82,15 +82,14 @@ const SuccessMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
-const ResetPassword = () => {
-  const navigate = useNavigate();
+const ResetPasswordPage = () => {
   const { token } = useParams<{ token: string }>();
-  const [formData, setFormData] = useState<ResetPasswordData>({
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
     newPassword: '',
     confirmPassword: ''
   });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,24 +103,27 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
-    setLoading(true);
 
     if (formData.newPassword !== formData.confirmPassword) {
       setError('Mật khẩu không khớp');
-      setLoading(false);
       return;
     }
 
+    setLoading(true);
+
     try {
-      if (!token) throw new Error('Token không hợp lệ');
+      if (!token) {
+        throw new Error('Token không hợp lệ');
+      }
       await authService.resetPassword(token, formData);
-      setSuccess('Mật khẩu đã được đặt lại thành công');
-      setTimeout(() => {
-        navigate('/auth/login');
-      }, 2000);
+      navigate('/auth/login', { 
+        state: { 
+          type: 'success', 
+          message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.' 
+        } 
+      });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đặt lại mật khẩu thất bại');
+      setError(err.response?.data?.message || 'Không thể đặt lại mật khẩu');
     } finally {
       setLoading(false);
     }
@@ -132,7 +134,6 @@ const ResetPassword = () => {
       <ResetPasswordForm onSubmit={handleSubmit}>
         <Title>Đặt lại mật khẩu</Title>
         {error && <ErrorMessage>{error}</ErrorMessage>}
-        {success && <SuccessMessage>{success}</SuccessMessage>}
         <InputGroup>
           <Icon><FaLock /></Icon>
           <Input
@@ -163,4 +164,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword; 
+export default ResetPasswordPage; 

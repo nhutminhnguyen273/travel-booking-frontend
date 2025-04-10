@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaUser, FaLock } from 'react-icons/fa';
-import authService, { LoginData } from '../../services/auth.service';
+import authService from '../../services/authService';
+import type { Login } from '../../types/auth';
 
 const LoginContainer = styled.div`
   display: flex;
@@ -91,9 +92,9 @@ const ErrorMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
-const Login = () => {
+const LoginPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<LoginData>({
+  const [formData, setFormData] = useState<Login>({
     username: '',
     password: ''
   });
@@ -102,7 +103,7 @@ const Login = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: Login) => ({
       ...prev,
       [name]: value
     }));
@@ -163,4 +164,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default LoginPage; 

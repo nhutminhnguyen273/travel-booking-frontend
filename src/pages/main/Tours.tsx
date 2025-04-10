@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaCalendarAlt, FaStar, FaShoppingCart } from 'react-icons/fa';
-import MainLayout from '../../components/layout/MainLayout';
 import tourService from '../../services/tourService';
 import { Tour } from '../../types/tour';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -266,148 +265,140 @@ const ToursContent: React.FC = (): React.ReactElement => {
 
   if (loading) {
     return (
-      <MainLayout>
-        <Wrapper>
-          <ToursContainer>
-            <PageTitle>Đang tải tour...</PageTitle>
-          </ToursContainer>
-        </Wrapper>
-      </MainLayout>
+      <Wrapper>
+        <ToursContainer>
+          <PageTitle>Đang tải tour...</PageTitle>
+        </ToursContainer>
+      </Wrapper>
     );
   }
 
   if (error) {
     return (
-      <MainLayout>
-        <Wrapper>
-          <ToursContainer>
-            <PageTitle>Lỗi</PageTitle>
-            <p>{error}</p>
-          </ToursContainer>
-        </Wrapper>
-      </MainLayout>
+      <Wrapper>
+        <ToursContainer>
+          <PageTitle>Lỗi</PageTitle>
+          <p>{error}</p>
+        </ToursContainer>
+      </Wrapper>
     );
   }
 
   return (
-    <MainLayout>
-      <Wrapper>
-        <ToursContainer>
-          <PageTitle>Danh sách tour</PageTitle>
-          
-          <FiltersContainer>
-            <FilterGrid>
-              <FilterGroup>
-                <FilterLabel>Địa điểm</FilterLabel>
-                <FilterSelect
-                  name="location"
-                  value={filters.location}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">Tất cả địa điểm</option>
-                  {Array.from(new Set(tours.map(tour => tour.location))).map(location => (
-                    <option key={location} value={location}>{location}</option>
-                  ))}
-                </FilterSelect>
-              </FilterGroup>
-              
-              <FilterGroup>
-                <FilterLabel>Thời gian</FilterLabel>
-                <FilterSelect
-                  name="duration"
-                  value={filters.duration}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">Tất cả thời gian</option>
-                  {Array.from(new Set(tours.map(tour => tour.duration))).map(duration => (
-                    <option key={duration} value={duration}>{duration}</option>
-                  ))}
-                </FilterSelect>
-              </FilterGroup>
-              
-              <FilterGroup>
-                <FilterLabel>Đánh giá</FilterLabel>
-                <FilterSelect
-                  name="rating"
-                  value={filters.rating}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">Tất cả đánh giá</option>
-                  <option value="4">4+ sao</option>
-                  <option value="3">3+ sao</option>
-                </FilterSelect>
-              </FilterGroup>
-            </FilterGrid>
+    <Wrapper>
+      <ToursContainer>
+        <PageTitle>Danh sách tour</PageTitle>
+        
+        <FiltersContainer>
+          <FilterGrid>
+            <FilterGroup>
+              <FilterLabel>Địa điểm</FilterLabel>
+              <FilterSelect
+                name="location"
+                value={filters.location}
+                onChange={handleFilterChange}
+              >
+                <option value="">Tất cả địa điểm</option>
+                {Array.from(new Set(tours.map(tour => tour.location))).map(location => (
+                  <option key={location} value={location}>{location}</option>
+                ))}
+              </FilterSelect>
+            </FilterGroup>
             
-            <FilterButton onClick={handleFilter}>Áp dụng bộ lọc</FilterButton>
-            <FilterButton onClick={resetFilters}>Đặt lại bộ lọc</FilterButton>
-          </FiltersContainer>
+            <FilterGroup>
+              <FilterLabel>Thời gian</FilterLabel>
+              <FilterSelect
+                name="duration"
+                value={filters.duration}
+                onChange={handleFilterChange}
+              >
+                <option value="">Tất cả thời gian</option>
+                {Array.from(new Set(tours.map(tour => tour.duration))).map(duration => (
+                  <option key={duration} value={duration}>{duration}</option>
+                ))}
+              </FilterSelect>
+            </FilterGroup>
+            
+            <FilterGroup>
+              <FilterLabel>Đánh giá</FilterLabel>
+              <FilterSelect
+                name="rating"
+                value={filters.rating}
+                onChange={handleFilterChange}
+              >
+                <option value="">Tất cả đánh giá</option>
+                <option value="4">4+ sao</option>
+                <option value="3">3+ sao</option>
+              </FilterSelect>
+            </FilterGroup>
+          </FilterGrid>
+          
+          <FilterButton onClick={handleFilter}>Áp dụng bộ lọc</FilterButton>
+          <FilterButton onClick={resetFilters}>Đặt lại bộ lọc</FilterButton>
+        </FiltersContainer>
 
-          {loading ? (
-            <div>Đang tải...</div>
-          ) : error ? (
-            <div>{error}</div>
-          ) : tours.length === 0 ? (
-            <div>Không có tour nào</div>
-          ) : (
-            <ToursGrid>
-              {tours.map((tour) => (
-                <TourCard key={tour._id}>
-                  <TourImage 
-                    src={tour.image || 'https://via.placeholder.com/300x200?text=No+Image'} 
-                    alt={tour.name}
-                  />
-                  <TourContent>
-                    <TourTitle>
-                      <Link to={`/tour/${tour._id}`}>{tour.name}</Link>
-                    </TourTitle>
-                    
-                    <TourInfo>
-                      <FaMapMarkerAlt />
-                      <span>{tour.location}</span>
-                    </TourInfo>
-                    
-                    <TourInfo>
-                      <FaCalendarAlt />
-                      <span>{tour.duration}</span>
-                    </TourInfo>
-                    
-                    <TourDescription>{tour.description}</TourDescription>
-                    
-                    <TourFooter>
-                      <div>
-                        <TourPrice>{formatPrice(tour.price)}</TourPrice>
-                        <TourRating>
-                          <FaStar />
-                          <span>{tour.rating}</span>
-                        </TourRating>
-                      </div>
-                      <BookNowButton onClick={() => handleBookNow(tour._id)}>
-                        <FaShoppingCart />
-                        Đặt ngay
-                      </BookNowButton>
-                    </TourFooter>
-                  </TourContent>
-                </TourCard>
-              ))}
-            </ToursGrid>
-          )}
-        </ToursContainer>
-      </Wrapper>
-    </MainLayout>
+        {loading ? (
+          <div>Đang tải...</div>
+        ) : error ? (
+          <div>{error}</div>
+        ) : tours.length === 0 ? (
+          <div>Không có tour nào</div>
+        ) : (
+          <ToursGrid>
+            {tours.map((tour) => (
+              <TourCard key={tour._id}>
+                <TourImage 
+                  src={tour.image || 'https://via.placeholder.com/300x200?text=No+Image'} 
+                  alt={tour.name}
+                />
+                <TourContent>
+                  <TourTitle>
+                    <Link to={`/tour/${tour._id}`}>{tour.name}</Link>
+                  </TourTitle>
+                  
+                  <TourInfo>
+                    <FaMapMarkerAlt />
+                    <span>{tour.location}</span>
+                  </TourInfo>
+                  
+                  <TourInfo>
+                    <FaCalendarAlt />
+                    <span>{tour.duration}</span>
+                  </TourInfo>
+                  
+                  <TourDescription>{tour.description}</TourDescription>
+                  
+                  <TourFooter>
+                    <div>
+                      <TourPrice>{formatPrice(tour.price)}</TourPrice>
+                      <TourRating>
+                        <FaStar />
+                        <span>{tour.rating}</span>
+                      </TourRating>
+                    </div>
+                    <BookNowButton onClick={() => handleBookNow(tour._id)}>
+                      <FaShoppingCart />
+                      Đặt ngay
+                    </BookNowButton>
+                  </TourFooter>
+                </TourContent>
+              </TourCard>
+            ))}
+          </ToursGrid>
+        )}
+      </ToursContainer>
+    </Wrapper>
   );
 };
 
 const ErrorFallback = ({ error }: { error: Error }) => {
   return (
-    <MainLayout>
-      <Wrapper>
-        <ToursContainer>
-          <PageTitle>Đã xảy ra lỗi</PageTitle>
-          <p>{error.message}</p>
-        </ToursContainer>
-      </Wrapper>
-    </MainLayout>
+    <Wrapper>
+      <ToursContainer>
+        <PageTitle>Đã xảy ra lỗi</PageTitle>
+        <p>{error.message}</p>
+      </ToursContainer>
+    </Wrapper>
   );
 };
 

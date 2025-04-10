@@ -19,9 +19,15 @@ import UpdateVoucher from '../pages/admin/UpdateVoucher';
 
 const PrivateRoutes = () => {
   const isAuthenticated = authService.isAuthenticated();
+  const user = authService.getUser();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  // Nếu người dùng là admin, chuyển hướng đến trang admin
+  if (user && user.role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return (
@@ -31,7 +37,7 @@ const PrivateRoutes = () => {
 
 const AdminRoutes = () => {
   const isAuthenticated = authService.isAuthenticated();
-  const user = authService.getUserFromToken();
+  const user = authService.getUser();
   
   if (!isAuthenticated || !user || user.role !== 'admin') {
     console.log('Authentication failed - redirecting to home');
@@ -55,11 +61,11 @@ const privateRoutes = [
     element: <PrivateRoutes />,
     children: [
       {
-        path: '/profile',
+        path: 'profile',
         element: <Profile />
       },
       {
-        path: '/admin',
+        path: 'admin',
         element: <AdminRoutes />,
         children: [
           {
@@ -105,23 +111,23 @@ const privateRoutes = [
         ]
       },
       {
-        path: '/bookings',
+        path: 'bookings',
         element: <Bookings />
       },
       {
-        path: '/booking/:id',
+        path: 'booking/:id',
         element: <Booking />
       },
       {
-        path: '/payments',
+        path: 'payments',
         element: <Payments />
       },
       {
-        path: '/settings',
+        path: 'settings',
         element: <Settings />
       },
       {
-        path: '/favorites',
+        path: 'favorites',
         element: <Favorites />
       }
     ]

@@ -155,6 +155,24 @@ const authService = {
                 message: "Vui lòng đăng nhập để thực hiện"
             };
         }
+    },
+
+    forgotPassword: async (email: string): Promise<AuthResponse> => {
+        try {
+            const response = await axiosInstance.post<AuthResponse>('/auth/forgot-password', { email });
+            return response.data;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Không thể gửi email khôi phục mật khẩu');
+        }
+    },
+
+    resetPassword: async (token: string, data: { newPassword: string; confirmPassword: string }): Promise<AuthResponse> => {
+        try {
+            const response = await axiosInstance.post<AuthResponse>(`/auth/reset-password/${token}`, data);
+            return response.data;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Không thể đặt lại mật khẩu');
+        }
     }
 };
 

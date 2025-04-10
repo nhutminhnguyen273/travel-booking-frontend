@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaEnvelope } from 'react-icons/fa';
-import authService, { ForgotPasswordData } from '../../services/auth.service';
+import authService from '../../services/authService';
 
 const ForgotPasswordContainer = styled.div`
   display: flex;
@@ -97,21 +97,16 @@ const SuccessMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
-const ForgotPassword = () => {
+const ForgotPasswordPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<ForgotPasswordData>({
-    email: ''
-  });
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setEmail(e.target.value);
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,10 +116,10 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      await authService.forgotPassword(formData);
-      setSuccess('Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư của bạn.');
+      await authService.forgotPassword(email);
+      setSuccess('Email khôi phục mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư của bạn.');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gửi email thất bại');
+      setError(err.response?.data?.message || 'Không thể gửi email khôi phục mật khẩu');
     } finally {
       setLoading(false);
     }
@@ -142,7 +137,7 @@ const ForgotPassword = () => {
             type="email"
             name="email"
             placeholder="Email"
-            value={formData.email}
+            value={email}
             onChange={handleChange}
             required
           />
@@ -159,4 +154,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword; 
+export default ForgotPasswordPage; 

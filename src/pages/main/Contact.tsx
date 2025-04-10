@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaPaperPlane } from 'react-icons/fa';
-import MainLayout from '../../components/layout/MainLayout';
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -218,7 +217,7 @@ const Contact = () => {
       //   setSuccess(true);
       //   setFormData({ name: '', email: '', phone: '', message: '' });
       // }
-      
+
       // For demo purposes
       await new Promise(resolve => setTimeout(resolve, 1000));
       setSuccess(true);
@@ -231,110 +230,108 @@ const Contact = () => {
   };
 
   return (
-    <MainLayout>
-      <PageWrapper>
-        <Container>
-          <Title>Liên hệ với chúng tôi</Title>
-          <ContentWrapper>
-            <ContactInfo>
-              <InfoTitle>Thông tin liên hệ</InfoTitle>
-              <InfoList>
-                <InfoItem>
-                  <FaMapMarkerAlt />
-                  <InfoText>
-                    <h3>Địa chỉ</h3>
-                    <p>123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</p>
-                  </InfoText>
-                </InfoItem>
-                <InfoItem>
-                  <FaPhone />
-                  <InfoText>
-                    <h3>Điện thoại</h3>
-                    <p>1900 1234</p>
-                    <p>0123 456 789</p>
-                  </InfoText>
-                </InfoItem>
-                <InfoItem>
-                  <FaEnvelope />
-                  <InfoText>
-                    <h3>Email</h3>
-                    <p>info@travelbooking.com</p>
-                    <p>support@travelbooking.com</p>
-                  </InfoText>
-                </InfoItem>
-                <InfoItem>
-                  <FaClock />
-                  <InfoText>
-                    <h3>Giờ làm việc</h3>
-                    <p>Thứ 2 - Thứ 6: 8:00 - 17:30</p>
-                    <p>Thứ 7: 8:00 - 12:00</p>
-                  </InfoText>
-                </InfoItem>
-              </InfoList>
-            </ContactInfo>
+    <PageWrapper>
+      <Container>
+        <Title>Liên hệ với chúng tôi</Title>
+        <ContentWrapper>
+          <ContactInfo>
+            <InfoTitle>Thông tin liên hệ</InfoTitle>
+            <InfoList>
+              <InfoItem>
+                <FaMapMarkerAlt />
+                <InfoText>
+                  <h3>Địa chỉ</h3>
+                  <p>123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</p>
+                </InfoText>
+              </InfoItem>
+              <InfoItem>
+                <FaPhone />
+                <InfoText>
+                  <h3>Điện thoại</h3>
+                  <p>1900 1234</p>
+                  <p>0123 456 789</p>
+                </InfoText>
+              </InfoItem>
+              <InfoItem>
+                <FaEnvelope />
+                <InfoText>
+                  <h3>Email</h3>
+                  <p>info@travelbooking.com</p>
+                  <p>support@travelbooking.com</p>
+                </InfoText>
+              </InfoItem>
+              <InfoItem>
+                <FaClock />
+                <InfoText>
+                  <h3>Giờ làm việc</h3>
+                  <p>Thứ 2 - Thứ 6: 8:00 - 17:30</p>
+                  <p>Thứ 7: 8:00 - 12:00</p>
+                </InfoText>
+              </InfoItem>
+            </InfoList>
+          </ContactInfo>
 
-            <ContactForm onSubmit={handleSubmit}>
-              <FormTitle>Gửi tin nhắn cho chúng tôi</FormTitle>
-              
-              <InputGroup>
-                <Label htmlFor="name">Họ và tên *</Label>
-                <Input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+          <ContactForm onSubmit={handleSubmit}>
+            <FormTitle>Gửi tin nhắn cho chúng tôi</FormTitle>
 
-              <InputGroup>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+            <InputGroup>
+              <Label htmlFor="name">Họ và tên *</Label>
+              <Input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              <InputGroup>
-                <Label htmlFor="phone">Số điện thoại</Label>
-                <Input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+            <InputGroup>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              <InputGroup>
-                <Label htmlFor="message">Nội dung tin nhắn *</Label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+            <InputGroup>
+              <Label htmlFor="phone">Số điện thoại</Label>
+              <Input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              {error && <ErrorMessage>{error}</ErrorMessage>}
-              {success && (
-                <SuccessMessage>
-                  Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất có thể!
-                </SuccessMessage>
-              )}
+            <InputGroup>
+              <Label htmlFor="message">Nội dung tin nhắn *</Label>
+              <Textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              <Button type="submit" disabled={loading}>
-                <FaPaperPlane />
-                {loading ? 'Đang gửi...' : 'Gửi tin nhắn'}
-              </Button>
-            </ContactForm>
-          </ContentWrapper>
-        </Container>
-      </PageWrapper>
-    </MainLayout>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            {success && (
+              <SuccessMessage>
+                Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất có thể!
+              </SuccessMessage>
+            )}
+
+            <Button type="submit" disabled={loading}>
+              <FaPaperPlane />
+              {loading ? 'Đang gửi...' : 'Gửi tin nhắn'}
+            </Button>
+          </ContactForm>
+        </ContentWrapper>
+      </Container>
+    </PageWrapper>
   );
 };
 

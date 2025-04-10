@@ -1,6 +1,5 @@
 import { RouteObject } from 'react-router-dom';
 import Home from '../pages/main/Home';
-import Login from '../pages/main/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import Tours from '../pages/main/Tours';
@@ -10,35 +9,31 @@ import Contact from '../pages/main/Contact';
 
 const publicRoutes: RouteObject[] = [
     {
-      path: '/',
+      path: '',
       element: <Home />,
     },
     {
-      path: '/login',
-      element: <Login />,
-    },
-    {
-      path: '/register',
+      path: 'register',
       element: <Register />,
     },
     {
-      path: '/forgot-password',
+      path: 'forgot-password',
       element: <ForgotPassword />,
     },
     {
-      path: '/tours',
+      path: 'tours',
       element: <Tours />,
     },
     {
-      path: '/tour/:id',
+      path: 'tour/:id',
       element: <TourDetail />,
     },
     {
-      path: '/about',
+      path: 'about',
       element: <About />,
     },
     {
-      path: '/contact',
+      path: 'contact',
       element: <Contact />,
     },
   ];

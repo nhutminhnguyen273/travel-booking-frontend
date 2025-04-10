@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
-import MainLayout from '../../components/layout/MainLayout';
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaStar, FaCheck } from 'react-icons/fa';
 import tourService from '../../services/tourService';
 import { Tour } from '../../types/tour';
+import { ErrorBoundary } from 'react-error-boundary';
+import authService from '../../services/authService';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -189,7 +190,16 @@ const ItineraryList = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
-const TourDetail: React.FC = () => {
+const ErrorFallback = ({ error }: { error: Error }) => {
+  return (
+    <div>
+      <h1>Error</h1>
+      <p>{error.message}</p>
+    </div>
+  );
+};
+
+const TourDetailContent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [tour, setTour] = useState<Tour | null>(null);
@@ -219,100 +229,102 @@ const TourDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <MainLayout>
-        <Wrapper>
-          <TourDetailContainer>
-            <PageTitle>Loading tour details...</PageTitle>
-          </TourDetailContainer>
-        </Wrapper>
-      </MainLayout>
+      <Wrapper>
+        <TourDetailContainer>
+          <PageTitle>Loading tour details...</PageTitle>
+        </TourDetailContainer>
+      </Wrapper>
     );
   }
 
   if (error || !tour) {
     return (
-      <MainLayout>
-        <Wrapper>
-          <TourDetailContainer>
-            <PageTitle>{error || 'Tour not found'}</PageTitle>
-          </TourDetailContainer>
-        </Wrapper>
-      </MainLayout>
+      <Wrapper>
+        <TourDetailContainer>
+          <PageTitle>{error || 'Tour not found'}</PageTitle>
+        </TourDetailContainer>
+      </Wrapper>
     );
   }
 
   return (
-    <MainLayout>
-      <Wrapper>
-        <TourDetailContainer>
-          <TourHeader>
-            <TourTitle>{tour.name}</TourTitle>
-            
-            <TourLocation>
-              <FaMapMarkerAlt />
-              <span>{tour.location}</span>
-            </TourLocation>
-            
-            <TourRating>
-              <FaStar />
-              <span>{tour.rating}</span>
-            </TourRating>
-          </TourHeader>
+    <Wrapper>
+      <TourDetailContainer>
+        <TourHeader>
+          <TourTitle>{tour.name}</TourTitle>
+          
+          <TourLocation>
+            <FaMapMarkerAlt />
+            <span>{tour.location}</span>
+          </TourLocation>
+          
+          <TourRating>
+            <FaStar />
+            <span>{tour.rating}</span>
+          </TourRating>
+        </TourHeader>
 
-          <TourImage src={tour.image} alt={tour.name} />
+        <TourImage src={tour.image} alt={tour.name} />
 
-          <TourGrid>
-            <TourContent>
-              <TourDescription>{tour.description}</TourDescription>
+        <TourGrid>
+          <TourContent>
+            <TourDescription>{tour.description}</TourDescription>
 
-              <SectionTitle>Tour Itinerary</SectionTitle>
-              <ItineraryList>
-                {tour.itinerary.map((day, index) => (
-                  <ItineraryItem key={index}>
-                    <ItineraryDay>{day.day}</ItineraryDay>
-                    <ItineraryTitle>{day.title}</ItineraryTitle>
-                    <ItineraryDescription>{day.description}</ItineraryDescription>
-                  </ItineraryItem>
-                ))}
-              </ItineraryList>
+            <SectionTitle>Tour Itinerary</SectionTitle>
+            <ItineraryList>
+              {tour.itinerary.map((day, index) => (
+                <ItineraryItem key={index}>
+                  <ItineraryDay>{day.day}</ItineraryDay>
+                  <ItineraryTitle>{day.title}</ItineraryTitle>
+                  <ItineraryDescription>{day.description}</ItineraryDescription>
+                </ItineraryItem>
+              ))}
+            </ItineraryList>
 
-              <SectionTitle>What's Included</SectionTitle>
-              <IncludedList>
-                {tour.includes.map((item, index) => (
-                  <IncludedItem key={index}>
-                    <FaCheck />
-                    <span>{item}</span>
-                  </IncludedItem>
-                ))}
-              </IncludedList>
-            </TourContent>
+            <SectionTitle>What's Included</SectionTitle>
+            <IncludedList>
+              {tour.includes.map((item, index) => (
+                <IncludedItem key={index}>
+                  <FaCheck />
+                  <span>{item}</span>
+                </IncludedItem>
+              ))}
+            </IncludedList>
+          </TourContent>
 
-            <TourSidebar>
-              <TourInfoCard>
-                <InfoItem>
-                  <FaCalendarAlt />
-                  <span>Duration: {tour.duration}</span>
-                </InfoItem>
-                
-                <InfoItem>
-                  <FaUsers />
-                  <span>Group Size: {tour.groupSize}</span>
-                </InfoItem>
-                
-                <InfoItem>
-                  <FaUsers />
-                  <span>Remaining Seats: {tour.remainingSeats}</span>
-                </InfoItem>
-                
-                <BookButton onClick={() => navigate(`/booking/${tour._id}`)}>
-                  Book Now
-                </BookButton>
-              </TourInfoCard>
-            </TourSidebar>
-          </TourGrid>
-        </TourDetailContainer>
-      </Wrapper>
-    </MainLayout>
+          <TourSidebar>
+            <TourInfoCard>
+              <InfoItem>
+                <FaCalendarAlt />
+                <span>Duration: {tour.duration}</span>
+              </InfoItem>
+              
+              <InfoItem>
+                <FaUsers />
+                <span>Group Size: {tour.groupSize}</span>
+              </InfoItem>
+              
+              <InfoItem>
+                <FaUsers />
+                <span>Remaining Seats: {tour.remainingSeats}</span>
+              </InfoItem>
+              
+              <BookButton onClick={() => navigate(`/booking/${tour._id}`)}>
+                Book Now
+              </BookButton>
+            </TourInfoCard>
+          </TourSidebar>
+        </TourGrid>
+      </TourDetailContainer>
+    </Wrapper>
+  );
+};
+
+const TourDetail: React.FC = () => {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <TourDetailContent />
+    </ErrorBoundary>
   );
 };
 

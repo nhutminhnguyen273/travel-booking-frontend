@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import MainLayout from '../../components/layout/MainLayout';
 import { Link } from 'react-router-dom';
 import { FaMapMarkerAlt, FaCalendarAlt, FaArrowRight } from 'react-icons/fa';
 
@@ -266,60 +265,58 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <MainLayout>
-      <Wrapper>
-        <ContentContainer>
-          <HeroSection>
-            <HeroContent>
-              <HeroHeading>Khám phá Việt Nam cùng TravelBooking</HeroHeading>
-              <HeroText>
-                Đặt tour du lịch dễ dàng, nhanh chóng và an toàn. Khám phá những điểm đến tuyệt đẹp trên khắp Việt Nam với dịch vụ chất lượng hàng đầu!
-              </HeroText>
-              <HeroButton to="/tours">
-                Khám phá ngay <FaArrowRight />
-              </HeroButton>
-            </HeroContent>
-          </HeroSection>
-
-          <SectionTitle>Tour nổi bật</SectionTitle>
-          <TourList>
-            {featuredTours.map((tour) => (
-              <TourCard key={tour.id}>
-                <TourImageContainer>
-                  <TourImage src={tour.image} alt={tour.name} />
-                  {tour.badge && <TourBadge>{tour.badge}</TourBadge>}
-                </TourImageContainer>
-                <TourContent>
-                  <TourTitle>{tour.name}</TourTitle>
-                  <TourInfo>
-                    <FaMapMarkerAlt /> {tour.location}
-                  </TourInfo>
-                  <TourInfo>
-                    <FaCalendarAlt /> {tour.duration}
-                  </TourInfo>
-                  <TourPrice>
-                    <span>{tour.price}</span>
-                    <TourButton to={`/tour/${tour.id}`}>
-                      Chi tiết <FaArrowRight />
-                    </TourButton>
-                  </TourPrice>
-                </TourContent>
-              </TourCard>
-            ))}
-          </TourList>
-
-          <PromoSection>
-            <PromoTitle>Ưu đãi đặc biệt</PromoTitle>
-            <PromoText>
-              Đăng ký và nhận ngay ưu đãi 10% cho tour đầu tiên của bạn. Áp dụng cho tất cả các tour du lịch trong nước đến hết tháng 12.
-            </PromoText>
-            <HeroButton to="/register">
-              Đăng ký ngay
+    <Wrapper>
+      <ContentContainer>
+        <HeroSection>
+          <HeroContent>
+            <HeroHeading>Khám phá Việt Nam cùng TravelBooking</HeroHeading>
+            <HeroText>
+              Đặt tour du lịch dễ dàng, nhanh chóng và an toàn. Khám phá những điểm đến tuyệt đẹp trên khắp Việt Nam với dịch vụ chất lượng hàng đầu!
+            </HeroText>
+            <HeroButton to="/tours">
+              Khám phá ngay <FaArrowRight />
             </HeroButton>
-          </PromoSection>
-        </ContentContainer>
-      </Wrapper>
-    </MainLayout>
+          </HeroContent>
+        </HeroSection>
+
+        <SectionTitle>Tour nổi bật</SectionTitle>
+        <TourList>
+          {featuredTours.map((tour) => (
+            <TourCard key={tour.id}>
+              <TourImageContainer>
+                <TourImage src={tour.image} alt={tour.name} />
+                {tour.badge && <TourBadge>{tour.badge}</TourBadge>}
+              </TourImageContainer>
+              <TourContent>
+                <TourTitle>{tour.name}</TourTitle>
+                <TourInfo>
+                  <FaMapMarkerAlt /> {tour.location}
+                </TourInfo>
+                <TourInfo>
+                  <FaCalendarAlt /> {tour.duration}
+                </TourInfo>
+                <TourPrice>
+                  <span>{tour.price}</span>
+                  <TourButton to={`/tour/${tour.id}`}>
+                    Chi tiết <FaArrowRight />
+                  </TourButton>
+                </TourPrice>
+              </TourContent>
+            </TourCard>
+          ))}
+        </TourList>
+
+        <PromoSection>
+          <PromoTitle>Ưu đãi đặc biệt</PromoTitle>
+          <PromoText>
+            Đăng ký và nhận ngay ưu đãi 10% cho tour đầu tiên của bạn. Áp dụng cho tất cả các tour du lịch trong nước đến hết tháng 12.
+          </PromoText>
+          <HeroButton to="/register">
+            Đăng ký ngay
+          </HeroButton>
+        </PromoSection>
+      </ContentContainer>
+    </Wrapper>
   );
 };
 
