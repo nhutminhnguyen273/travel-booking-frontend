@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaUser, FaEnvelope, FaPhone, FaBirthdayCake, FaVenusMars } from 'react-icons/fa';
-import MainLayout from '../../components/layout/MainLayout';
 import authService from '../../services/authService';
 import { User } from '../../types/user';
 import { formatDateInput } from '../../components/utils/formatDate';
@@ -180,112 +179,110 @@ const Profile = () => {
   };
 
   return (
-    <MainLayout>
-      <PageWrapper>
-        <Container>
-          <Title>Thông tin cá nhân</Title>
-          <ProfileCard>
-            {success && <SuccessMessage>{success}</SuccessMessage>}
-            <Form onSubmit={handleSubmit}>
-              <InputGroup>
-                <Label>
-                  <FaUser />
-                  Tên đăng nhập
-                </Label>
-                <Input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  disabled
-                />
-              </InputGroup>
+    <PageWrapper>
+      <Container>
+        <Title>Thông tin cá nhân</Title>
+        <ProfileCard>
+          {success && <SuccessMessage>{success}</SuccessMessage>}
+          <Form onSubmit={handleSubmit}>
+            <InputGroup>
+              <Label>
+                <FaUser />
+                Tên đăng nhập
+              </Label>
+              <Input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                disabled
+              />
+            </InputGroup>
 
-              <InputGroup>
-                <Label>
-                  <FaUser />
-                  Họ và tên
-                </Label>
-                <Input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+            <InputGroup>
+              <Label>
+                <FaUser />
+                Họ và tên
+              </Label>
+              <Input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              <InputGroup>
-                <Label>
-                  <FaBirthdayCake />
-                  Ngày sinh
-                </Label>
-                <Input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+            <InputGroup>
+              <Label>
+                <FaBirthdayCake />
+                Ngày sinh
+              </Label>
+              <Input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              <InputGroup>
-                <Label>
-                  <FaVenusMars />
-                  Giới tính
-                </Label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '0.5rem',
-                    fontSize: '1rem'
-                  }}
-                >
-                  <option value="male">Nam</option>
-                  <option value="female">Nữ</option>
-                  <option value="other">Khác</option>
-                </select>
-              </InputGroup>
+            <InputGroup>
+              <Label>
+                <FaVenusMars />
+                Giới tính
+              </Label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '0.5rem',
+                  fontSize: '1rem'
+                }}
+              >
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+              </select>
+            </InputGroup>
 
-              <InputGroup>
-                <Label>
-                  <FaEnvelope />
-                  Email
-                </Label>
-                <Input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+            <InputGroup>
+              <Label>
+                <FaEnvelope />
+                Email
+              </Label>
+              <Input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              <InputGroup>
-                <Label>
-                  <FaPhone />
-                  Số điện thoại
-                </Label>
-                <Input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </InputGroup>
+            <InputGroup>
+              <Label>
+                <FaPhone />
+                Số điện thoại
+              </Label>
+              <Input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-              {error && <ErrorMessage>{error}</ErrorMessage>}
+            {error && <ErrorMessage>{error}</ErrorMessage>}
 
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Đang cập nhật...' : 'Cập nhật thông tin'}
-              </Button>
-            </Form>
-          </ProfileCard>
-        </Container>
-      </PageWrapper>
-    </MainLayout>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Đang cập nhật...' : 'Cập nhật thông tin'}
+            </Button>
+          </Form>
+        </ProfileCard>
+      </Container>
+    </PageWrapper>
   );
 };
 

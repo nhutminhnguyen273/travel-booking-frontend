@@ -4,8 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FaCalendarAlt, FaUsers, FaMoneyBillWave, FaMapMarkerAlt, FaCreditCard } from 'react-icons/fa';
 import tourService from '../../services/tourService';
 import { Tour } from '../../types/tour';
-import bookingService, { PaymentMethod } from '../../services/bookingService';
+import { PaymentMethod, BookingData, BookingStatus, PaymentStatus } from '../../types/booking';
+import bookingService from '../../services/bookingService';
 import StripePayment from '../../components/payment/StripePayment';
+import { toast } from 'react-hot-toast';
+import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode';
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -82,19 +86,6 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-  width: 100%;
-  padding: ${props => props.theme.spacing.sm};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.sm};
-  font-size: ${props => props.theme.fontSizes.base};
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-  }
-`;
-
-const Select = styled.select`
   width: 100%;
   padding: ${props => props.theme.spacing.sm};
   border: 1px solid ${props => props.theme.colors.border};
@@ -190,12 +181,24 @@ const Booking = () => {
   const [formData, setFormData] = useState({
     startDate: '',
     people: 1,
-    paymentMethod: 'vnpay' as PaymentMethod
+    paymentMethod: PaymentMethod.STRIPE
   });
   const [showStripePayment, setShowStripePayment] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Lấy thông tin người dùng từ token
+    const token = Cookies.get('token');
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        setUserId(decoded.id);
+      } catch (err) {
+        console.error('Error decoding token:', err);
+      }
+    }
+
     const fetchTour = async () => {
       try {
         if (!id) {
@@ -269,50 +272,99 @@ const Booking = () => {
         return;
       }
 
-      const bookingData = {
-        tour: id,
-        schedules: [{
-          startDate: formattedStartDate,
-          endDate: formattedEndDate
-        }],
-        peopleCount: Number(formData.people),
-        paymentMethod: formData.paymentMethod,
-        totalAmount: totalAmount,
-        currency: 'vnd'
-      };
-
-      console.log('Booking data being sent:', JSON.stringify(bookingData, null, 2));
-      console.log('Tour price:', tour.price);
-      console.log('People count:', formData.people);
-      console.log('Total amount:', totalAmount);
+      // Convert VND to USD for Stripe (using a fixed exchange rate)
+      const exchangeRate = 24500; // 1 USD = 24,500 VND (approximate rate)
+      const amountInUSD = totalAmount / exchangeRate;
+      
+      // Check if amount exceeds Stripe's limit
+      if (formData.paymentMethod === 'stripe' && amountInUSD > 999999.99) {
+        setError('Số tiền thanh toán vượt quá giới hạn cho phép của Stripe ($999,999.99)');
+        return;
+      }
 
       // If payment method is Stripe, create a booking and show Stripe payment
       if (formData.paymentMethod === 'stripe') {
         try {
+          // Ensure userId is included in booking data
+          if (!userId) {
+            setError('Vui lòng đăng nhập để tiếp tục');
+            return;
+          }
+
+          const bookingData: BookingData = {
+            tour: id!,
+            schedules: [{
+              startDate: formattedStartDate,
+              endDate: formattedEndDate
+            }],
+            peopleCount: formData.people,
+            paymentMethod: PaymentMethod.STRIPE,
+            totalAmount: totalAmount,
+            userId: userId || '',
+            currency: 'vnd',
+            amountInUSD: amountInUSD
+          };
+
           const response = await bookingService.createBooking(bookingData);
           console.log('Booking response:', response);
-          setBookingId(response.data._id);
-          setShowStripePayment(true);
-          return;
+          
+          if (response && response.data && response.data.booking && response.data.payment) {
+            setBookingId(response.data.booking._id);
+            setShowStripePayment(true);
+            setFormData(prev => ({
+              ...prev,
+              paymentMethod: PaymentMethod.STRIPE
+            }));
+            return;
+          } else {
+            throw new Error('Invalid response format from booking service');
+          }
         } catch (err: any) {
           console.error('Stripe booking error:', err);
-          setError(err.message || 'Lỗi khi tạo booking cho thanh toán Stripe');
+          
+          if (err.message && err.message.includes('vượt quá giới hạn của Stripe')) {
+            setError('Số tiền thanh toán vượt quá giới hạn của Stripe (999999.99$). Vui lòng chọn phương thức thanh toán khác hoặc liên hệ admin để được hỗ trợ.');
+          } else if (err.message && err.message.includes('histories validation failed')) {
+            setError('Lỗi xác thực: Vui lòng đăng nhập lại để tiếp tục.');
+            // Redirect to login page
+            navigate('/login');
+          } else {
+            setError(err.message || 'Lỗi khi tạo booking cho thanh toán Stripe');
+          }
           return;
         }
       }
 
       // For other payment methods, proceed with normal flow
       try {
+        const bookingData: BookingData = {
+          tour: id!,
+          schedules: [{
+            startDate: formattedStartDate,
+            endDate: formattedEndDate
+          }],
+          peopleCount: formData.people,
+          paymentMethod: PaymentMethod.STRIPE,
+          totalAmount: totalAmount,
+          userId: userId || '',
+          currency: 'vnd',
+          amountInUSD: amountInUSD
+        };
+        
         const response = await bookingService.createBooking(bookingData);
         console.log('Booking response:', response);
-
-        // Show success message using a more reliable method
-        if (window.confirm('Đặt tour thành công! Bạn có muốn xem danh sách tour không?')) {
-          window.location.href = '/tours';
-        }
+        
+        // Show success message and navigate directly
+        toast.success('Đặt tour thành công!');
+        navigate('/tours');
       } catch (err: any) {
         console.error('Regular booking error:', err);
-        setError(err.message || 'Không thể đặt tour. Vui lòng thử lại sau.');
+        if (err.message && err.message.includes('histories validation failed')) {
+          setError('Lỗi xác thực: Vui lòng đăng nhập lại để tiếp tục.');
+          // Có thể thêm logic để chuyển hướng đến trang đăng nhập ở đây
+        } else {
+          setError(err.message || 'Không thể đặt tour. Vui lòng thử lại sau.');
+        }
       }
     } catch (err: any) {
       console.error('Detailed error:', err);
@@ -329,8 +381,9 @@ const Booking = () => {
   };
 
   const handleStripeSuccess = (_bookingId: string) => {
-    // Navigate to tours page using the correct path
-    window.location.href = '/tours';
+    // Show success message and navigate directly
+    toast.success('Đặt tour thành công!');
+    navigate('/tours');
   };
 
   const handleStripeError = (error: string) => {
@@ -414,34 +467,8 @@ const Booking = () => {
             <Label>Phương thức thanh toán</Label>
             <PaymentMethodContainer>
               <PaymentMethodOption
-                className={formData.paymentMethod === 'vnpay' ? 'selected' : ''}
-                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'vnpay' }))}
-              >
-                <PaymentMethodIcon>
-                  <FaMoneyBillWave />
-                </PaymentMethodIcon>
-                <div>
-                  <PaymentMethodLabel>VNPay</PaymentMethodLabel>
-                  <PaymentMethodDescription>Thanh toán qua cổng VNPay</PaymentMethodDescription>
-                </div>
-              </PaymentMethodOption>
-
-              <PaymentMethodOption
-                className={formData.paymentMethod === 'momo' ? 'selected' : ''}
-                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'momo' }))}
-              >
-                <PaymentMethodIcon>
-                  <FaMoneyBillWave />
-                </PaymentMethodIcon>
-                <div>
-                  <PaymentMethodLabel>MoMo</PaymentMethodLabel>
-                  <PaymentMethodDescription>Thanh toán qua ví MoMo</PaymentMethodDescription>
-                </div>
-              </PaymentMethodOption>
-
-              <PaymentMethodOption
-                className={formData.paymentMethod === 'stripe' ? 'selected' : ''}
-                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'stripe' }))}
+                className={formData.paymentMethod === PaymentMethod.STRIPE ? 'selected' : ''}
+                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: PaymentMethod.STRIPE }))}
               >
                 <PaymentMethodIcon>
                   <FaCreditCard />
@@ -455,7 +482,7 @@ const Booking = () => {
           </FormGroup>
           {error && <ErrorMessage>{error}</ErrorMessage>}
 
-          {showStripePayment && bookingId ? (
+          {showStripePayment && bookingId && userId ? (
             <StripePayment
               bookingData={{
                 tour: id!,
@@ -464,9 +491,12 @@ const Booking = () => {
                   endDate: new Date(new Date(formData.startDate).getTime() + Number(tour.duration) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
                 }],
                 peopleCount: formData.people,
-                paymentMethod: 'stripe',
-                totalAmount: Number(tour.price) * Number(formData.people)
-              }}
+                paymentMethod: PaymentMethod.STRIPE,
+                totalAmount: Number(tour.price) * Number(formData.people),
+                bookingId: bookingId,
+                userId: userId,
+                currency: 'vnd'
+              } as unknown as BookingData}
               onSuccess={handleStripeSuccess}
               onError={handleStripeError}
             />

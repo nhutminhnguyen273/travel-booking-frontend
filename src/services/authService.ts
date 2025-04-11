@@ -2,7 +2,24 @@ import axiosInstance from '../config/axios';
 import { Login, Register, AuthResponse } from '../types/auth';
 import Cookies from 'js-cookie';
 
+// Create an event emitter for auth state changes
+const authStateChangeCallbacks: (() => void)[] = [];
+
 const authService = {
+    onAuthStateChange: (callback: () => void) => {
+        authStateChangeCallbacks.push(callback);
+        return () => {
+            const index = authStateChangeCallbacks.indexOf(callback);
+            if (index > -1) {
+                authStateChangeCallbacks.splice(index, 1);
+            }
+        };
+    },
+
+    notifyAuthStateChange: () => {
+        authStateChangeCallbacks.forEach(callback => callback());
+    },
+
     login: async (credentials: Login): Promise<AuthResponse> => {
         try {
             console.log('Attempting login with credentials:', credentials);
@@ -10,19 +27,21 @@ const authService = {
             console.log('Login response:', response.data);
             
             if (response.data.accessToken) {
-                // Lưu token vào cookie
+                // Lưu token vào cookie với thời hạn 1 giờ
                 Cookies.set('token', response.data.accessToken, { 
-                    expires: 7, // 7 days
+                    expires: 1/24, // 1 hour (1/24 of a day)
                     secure: true,
                     sameSite: 'strict'
                 });
                 // Lưu thông tin user vào cookie
                 Cookies.set('user', JSON.stringify(response.data.user), {
-                    expires: 7,
+                    expires: 1/24, // 1 hour
                     secure: true,
                     sameSite: 'strict'
                 });
                 console.log('Token and user data stored in cookies');
+                // Notify auth state change
+                authService.notifyAuthStateChange();
             }
             return response.data;
         } catch (error: any) {
@@ -41,44 +60,34 @@ const authService = {
     },
 
     logout: (): void => {
-        Cookies.remove('token');
-        Cookies.remove('user');
+        console.log('Logging out...');
+        // Xóa tất cả cookies liên quan đến authentication
+        Cookies.remove('token', { path: '/' });
+        Cookies.remove('user', { path: '/' });
+        console.log('Cookies cleared');
+        // Notify auth state change
+        authService.notifyAuthStateChange();
     },
 
     isAuthenticated: (): boolean => {
         const token = Cookies.get('token');
         const user = Cookies.get('user');
-        
-        console.log('Authentication check:', {
-            hasToken: !!token,
-            hasUser: !!user,
-            token: token ? 'Token exists' : 'No token',
-            user: user ? 'User exists' : 'No user'
-        });
-
-        if (!token || !user) {
-            console.log('Authentication failed: Missing token or user data');
-            return false;
-        }
-
-        try {
-            const userData = JSON.parse(user);
-            console.log('User data from cookies:', {
-                id: userData._id,
-                email: userData.email,
-                role: userData.role
-            });
-            return true;
-        } catch (error) {
-            console.error('Error parsing user data:', error);
-            return false;
-        }
+        return !!(token && user);
     },
 
     getToken: (): string | null => {
-        const token = Cookies.get('token');
-        console.log('Getting token from cookies:', token ? 'Token exists' : 'No token');
-        return token || null;
+        return Cookies.get('token') || null;
+    },
+
+    getUser: (): any => {
+        const userStr = Cookies.get('user');
+        if (!userStr) return null;
+        try {
+            return JSON.parse(userStr);
+        } catch (error) {
+            console.error('Error parsing user from cookies:', error);
+            return null;
+        }
     },
 
     getUserFromToken: (): any => {
@@ -99,30 +108,6 @@ const authService = {
             return JSON.parse(jsonPayload);
         } catch (error) {
             console.error('Error decoding token:', error);
-            return null;
-        }
-    },
-
-    getUser: (): any => {
-        const userStr = Cookies.get('user');
-        console.log('Getting user from cookies:', userStr ? 'User exists' : 'No user');
-        
-        if (!userStr) {
-            console.log('No user data found in cookies');
-            return null;
-        }
-
-        try {
-            const user = JSON.parse(userStr);
-            console.log('User data retrieved:', {
-                id: user._id,
-                email: user.email,
-                role: user.role,
-                name: user.name
-            });
-            return user;
-        } catch (error) {
-            console.error('Error parsing user from cookies:', error);
             return null;
         }
     },

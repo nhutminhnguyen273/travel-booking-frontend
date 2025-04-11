@@ -1,24 +1,11 @@
 import axiosInstance from '../config/axios';
-
-export type PaymentMethod = 'vnpay' | 'momo' | 'stripe';
-
-export interface BookingData {
-  tour: string;
-  schedules: {
-    startDate: string;
-    endDate: string;
-  }[];
-  peopleCount: number;
-  paymentMethod: PaymentMethod;
-  totalAmount: number;
-  currency?: string;
-}
+import { PaymentMethod, BookingData, BookingStatus, PaymentStatus } from '../types/booking';
 
 export interface Booking extends BookingData {
   _id: string;
   user: string;
-  status: string;
-  paymentStatus: string;
+  status: BookingStatus;
+  paymentStatus: PaymentStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,25 +18,29 @@ export interface StripePaymentIntent {
 
 const bookingService = {
     // Create a new booking
-    createBooking: async (bookingData: BookingData) => {
+    createBooking: async (bookingData: BookingData): Promise<any> => {
         try {
+            // Ensure userId is included in the request
+            if (!bookingData.userId) {
+                throw new Error('User ID is required for booking');
+            }
+
+            console.log('Creating booking with data:', JSON.stringify(bookingData, null, 2));
             const response = await axiosInstance.post('/booking', bookingData);
             return response.data;
         } catch (error: any) {
-            if (error.response) {
-                // The request was made and the server responded with a status code
-                // that falls out of the range of 2xx
-                console.error('Booking error response:', error.response.data);
-                throw new Error(error.response.data.message || 'Lỗi khi đặt tour');
-            } else if (error.request) {
-                // The request was made but no response was received
-                console.error('No response received:', error.request);
-                throw new Error('Không nhận được phản hồi từ máy chủ');
-            } else {
-                // Something happened in setting up the request that triggered an Error
-                console.error('Error setting up request:', error.message);
-                throw new Error('Lỗi khi gửi yêu cầu đặt tour');
+            console.error('Booking error response:', error.response?.data);
+            
+            // Handle specific error cases
+            if (error.response?.data?.error?.includes('histories validation failed')) {
+                throw new Error('Vui lòng đăng nhập lại để tiếp tục');
             }
+            
+            if (error.response?.data?.error?.includes('vượt quá giới hạn của Stripe')) {
+                throw new Error(error.response.data.error);
+            }
+            
+            throw new Error(error.response?.data?.message || 'Lỗi khi tạo booking');
         }
     },
 

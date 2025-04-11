@@ -10,7 +10,7 @@ import Bookings from '../pages/user/Booking';
 import Booking from '../pages/user/Booking';
 import Payments from '../pages/user/Payments';
 import Settings from '../pages/user/Settings';
-import Favorites from '../pages/user/Favorites';
+import Favorites from '../pages/main/Favorites';
 import AddTour from '../pages/admin/AddTour';
 import EditTour from '../pages/admin/EditTour';
 import AddVoucher from '../pages/admin/AddVoucher';

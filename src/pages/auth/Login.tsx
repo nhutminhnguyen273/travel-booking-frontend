@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { FaUser, FaLock } from 'react-icons/fa';
 import authService from '../../services/authService';
 import type { Login } from '../../types/auth';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LoginContainer = styled.div`
   display: flex;
@@ -92,8 +93,9 @@ const ErrorMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
-const LoginPage = () => {
+const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<Login>({
     username: '',
     password: ''
@@ -111,14 +113,15 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
 
     try {
-      await authService.login(formData);
+      const response = await authService.login(formData);
+      login(response.accessToken, response.user);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại');
+      setError(err.message || 'Đăng nhập thất bại');
     } finally {
       setLoading(false);
     }

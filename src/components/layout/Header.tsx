@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaUserCircle, FaSignOutAlt, FaCog, FaListAlt, FaHeart } from 'react-icons/fa';
 import authService from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const HeaderWrapper = styled.header`
   width: 100%;
@@ -148,42 +149,17 @@ const UserEmail = styled.div`
 `;
 
 const Header: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const { isAuthenticated, user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check authentication status
-    const authenticated = authService.isAuthenticated();
-    setIsAuthenticated(authenticated);
-    
-    if (authenticated) {
-      // Get user information
-      const userData = authService.getUser();
-      setUser(userData);
-    }
-
-    // Close dropdown when clicking outside
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   const handleLogout = () => {
+    console.log('Handling logout...');
     authService.logout();
-    // setIsAuthenticated(false);
-    // setUser(null);
-    // setDropdownOpen(false);
-    navigate('/auth/login');
+    logout();
+    setDropdownOpen(false);
+    navigate('/auth/login', { replace: true });
   };
 
   return (

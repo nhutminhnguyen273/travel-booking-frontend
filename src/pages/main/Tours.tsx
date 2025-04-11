@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaCalendarAlt, FaStar, FaShoppingCart, FaUsers, FaClock, FaTag, FaSearch, FaArrowRight } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaStar, FaShoppingCart, FaUsers, FaClock, FaTag, FaSearch, FaArrowRight, FaHeart } from 'react-icons/fa';
 import tourService from '../../services/tourService';
+import favoriteService from '../../services/favoriteService';
 import { Tour } from '../../types/tour';
 import { ErrorBoundary } from 'react-error-boundary';
 import authService from '../../services/authService';
+import { toast } from 'react-toastify';
+import { FavoriteTour, FavoriteResponse } from '../../services/favoriteService';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -33,6 +36,44 @@ const FiltersContainer = styled.div`
   border-radius: ${props => props.theme.borderRadius.md};
   margin-bottom: ${props => props.theme.spacing.xl};
   box-shadow: ${props => props.theme.shadows.sm};
+`;
+
+const SearchBar = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  font-size: 1rem;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const FilterButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+`;
+
+const FilterButton = styled.button<{ active?: boolean }>`
+  padding: 0.75rem 1.5rem;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  background-color: ${props => props.active ? props.theme.colors.primary : 'white'};
+  color: ${props => props.active ? 'white' : props.theme.colors.text};
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${props => props.active ? props.theme.colors.primary : props.theme.colors.background};
+  }
 `;
 
 const FilterGrid = styled.div`
@@ -65,21 +106,6 @@ const FilterSelect = styled.select`
   }
 `;
 
-const FilterButton = styled.button`
-  background-color: ${props => props.theme.colors.primary};
-  color: white;
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.lg};
-  border: none;
-  border-radius: ${props => props.theme.borderRadius.sm};
-  cursor: pointer;
-  font-weight: 500;
-  margin-top: ${props => props.theme.spacing.base};
-  
-  &:hover {
-    background-color: ${props => props.theme.colors.accent};
-  }
-`;
-
 const ToursGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -99,9 +125,16 @@ const TourCard = styled.div`
   }
 `;
 
-const TourImage = styled.img`
+const TourImageContainer = styled.div`
+  position: relative;
   width: 100%;
   height: 200px;
+  overflow: hidden;
+`;
+
+const TourImage = styled.img`
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 `;
 
@@ -154,6 +187,20 @@ const TourFooter = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-top: 1rem;
+  gap: 1rem;
+`;
+
+const DetailButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${props => props.theme.colors.primary};
+  text-decoration: none;
+  font-weight: 500;
+  
+  &:hover {
+    color: ${props => props.theme.colors.accent};
+  }
 `;
 
 const TourPrice = styled.div`
@@ -177,6 +224,28 @@ const BookNowButton = styled.button`
 
   &:hover {
     background-color: ${({ theme }) => theme.colors.secondary};
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const FavoriteButton = styled.button<{ isFavorite: boolean }>`
+  background: ${props => props.isFavorite ? props.theme.colors.error : 'transparent'};
+  color: ${props => props.isFavorite ? 'white' : props.theme.colors.error};
+  border: 1px solid ${props => props.isFavorite ? 'transparent' : props.theme.colors.error};
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${props => props.isFavorite ? props.theme.colors.error : props.theme.colors.error};
+    color: white;
   }
 
   svg {
@@ -232,6 +301,9 @@ const ToursContent: React.FC = (): React.ReactElement => {
     maxPrice: 0
   });
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tourType, setTourType] = useState<'all' | 'domestic' | 'international'>('all');
 
   useEffect(() => {
     const fetchTours = async () => {
@@ -249,7 +321,24 @@ const ToursContent: React.FC = (): React.ReactElement => {
       }
     };
 
+    const fetchFavorites = async () => {
+      try {
+        if (authService.isAuthenticated()) {
+          const response = await favoriteService.getFavorites() as FavoriteResponse;
+          console.log('Favorites response:', response);
+          if (response && response.data && Array.isArray(response.data)) {
+            const favoriteIds = response.data.map(fav => fav.tour._id);
+            console.log('Favorite IDs:', favoriteIds);
+            setFavorites(favoriteIds);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching favorites:', err);
+      }
+    };
+
     fetchTours();
+    fetchFavorites();
   }, []);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
@@ -268,13 +357,14 @@ const ToursContent: React.FC = (): React.ReactElement => {
   };
 
   const filteredTours = tours.filter(tour => {
-    const matchesLocation = filters.location === 'all' || tour.destination.includes(filters.location);
-    const matchesDuration = filters.duration === 'all' || tour.duration === parseInt(filters.duration);
-    const matchesType = filters.type === 'all' || tour.type === filters.type;
-    const matchesPrice = (!filters.minPrice || tour.price >= filters.minPrice) && 
-                        (!filters.maxPrice || tour.price <= filters.maxPrice);
+    const matchesSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         tour.destination.some(dest => dest.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    return matchesLocation && matchesDuration && matchesType && matchesPrice;
+    const matchesType = tourType === 'all' || 
+                       (tourType === 'domestic' && tour.type === 'domestic') ||
+                       (tourType === 'international' && tour.type === 'international');
+
+    return matchesSearch && matchesType;
   });
 
   console.log('Filtered Tours:', filteredTours);
@@ -296,6 +386,28 @@ const ToursContent: React.FC = (): React.ReactElement => {
         price: selectedTour.price
       };
       setBookings([...bookings, newBooking]);
+    }
+  };
+
+  const handleFavorite = async (tourId: string) => {
+    if (!authService.isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      if (favorites.includes(tourId)) {
+        await favoriteService.removeFavorite(tourId);
+        setFavorites(prev => prev.filter(id => id !== tourId));
+        toast.success('Đã xóa tour khỏi danh sách yêu thích');
+      } else {
+        await favoriteService.addFavorite(tourId);
+        setFavorites(prev => [...prev, tourId]);
+        toast.success('Đã thêm tour vào danh sách yêu thích');
+      }
+    } catch (err: any) {
+      console.error('Error handling favorite:', err);
+      toast.error(err.message || 'Không thể cập nhật danh sách yêu thích');
     }
   };
 
@@ -326,74 +438,35 @@ const ToursContent: React.FC = (): React.ReactElement => {
         <PageTitle>Danh sách tour</PageTitle>
         
         <FiltersContainer>
-          <FilterGrid>
-            <FilterGroup>
-              <FilterLabel>Địa điểm</FilterLabel>
-              <FilterSelect
-                name="location"
-                value={filters.location}
-                onChange={handleFilterChange}
-              >
-                <option value="all">All Locations</option>
-                {Array.from(new Set(tours.flatMap(tour => tour.destination))).map(location => (
-                  <option key={location} value={location}>{location}</option>
-                ))}
-              </FilterSelect>
-            </FilterGroup>
-            
-            <FilterGroup>
-              <FilterLabel>Thời gian</FilterLabel>
-              <FilterSelect
-                name="duration"
-                value={filters.duration}
-                onChange={handleFilterChange}
-              >
-                <option value="">Tất cả thời gian</option>
-                {Array.from(new Set(tours.map(tour => tour.duration))).map(duration => (
-                  <option key={duration} value={duration}>{duration} ngày</option>
-                ))}
-              </FilterSelect>
-            </FilterGroup>
-            
-            <FilterGroup>
-              <FilterLabel>Loại tour</FilterLabel>
-              <FilterSelect
-                name="type"
-                value={filters.type}
-                onChange={handleFilterChange}
-              >
-                <option value="">Tất cả loại tour</option>
-                <option value="adventure">Adventure</option>
-                <option value="cultural">Cultural</option>
-                <option value="relaxation">Relaxation</option>
-              </FilterSelect>
-            </FilterGroup>
-            
-            <FilterGroup>
-              <FilterLabel>Giá</FilterLabel>
-              <PriceRange>
-                <Input
-                  type="number"
-                  name="minPrice"
-                  value={filters.minPrice || ''}
-                  onChange={handleFilterChange}
-                  placeholder="Min Price"
-                />
-                <Input
-                  type="number"
-                  name="maxPrice"
-                  value={filters.maxPrice || ''}
-                  onChange={handleFilterChange}
-                  placeholder="Max Price"
-                />
-              </PriceRange>
-            </FilterGroup>
-          </FilterGrid>
+          <SearchBar>
+            <SearchInput
+              type="text"
+              placeholder="Tìm kiếm tour..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </SearchBar>
           
-          <FilterButton onClick={() => {
-            // TODO: Implement filtering logic with API
-            console.log('Applying filters:', filters);
-          }}>Áp dụng bộ lọc</FilterButton>
+          <FilterButtons>
+            <FilterButton
+              active={tourType === 'all'}
+              onClick={() => setTourType('all')}
+            >
+              Tất cả
+            </FilterButton>
+            <FilterButton
+              active={tourType === 'domestic'}
+              onClick={() => setTourType('domestic')}
+            >
+              Tour trong nước
+            </FilterButton>
+            <FilterButton
+              active={tourType === 'international'}
+              onClick={() => setTourType('international')}
+            >
+              Tour nước ngoài
+            </FilterButton>
+          </FilterButtons>
         </FiltersContainer>
 
         {loading ? (
@@ -406,10 +479,12 @@ const ToursContent: React.FC = (): React.ReactElement => {
             <ToursGrid>
               {tours.map((tour) => (
                 <TourCard key={tour._id}>
-                  <TourImage 
-                    src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/300x200?text=No+Image'} 
-                    alt={tour.title}
-                  />
+                  <TourImageContainer>
+                    <TourImage 
+                      src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/300x200?text=No+Image'} 
+                      alt={tour.title}
+                    />
+                  </TourImageContainer>
                   <TourContent>
                     <TourTitle>
                       <Link to={`/tour/${tour._id}`}>{tour.title}</Link>
@@ -440,10 +515,24 @@ const ToursContent: React.FC = (): React.ReactElement => {
                           <span>Còn {tour.remainingSeats}/{tour.maxPeople} chỗ</span>
                         </TourInfo>
                       </div>
-                      <BookNowButton onClick={() => handleBookNow(tour._id)}>
-                        <FaShoppingCart />
-                        Đặt ngay
-                      </BookNowButton>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <DetailButton to={`/tour/${tour._id}`}>
+                          <FaArrowRight />
+                          Chi tiết
+                        </DetailButton>
+                        <FavoriteButton
+                          isFavorite={favorites.includes(tour._id)}
+                          onClick={() => handleFavorite(tour._id)}
+                          title={favorites.includes(tour._id) ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+                        >
+                          <FaHeart />
+                          {favorites.includes(tour._id) ? "Đã thích" : "Thích"}
+                        </FavoriteButton>
+                        <BookNowButton onClick={() => handleBookNow(tour._id)}>
+                          <FaShoppingCart />
+                          Đặt ngay
+                        </BookNowButton>
+                      </div>
                     </TourFooter>
                   </TourContent>
                 </TourCard>
@@ -454,10 +543,12 @@ const ToursContent: React.FC = (): React.ReactElement => {
           <ToursGrid>
             {filteredTours.map((tour) => (
               <TourCard key={tour._id}>
-                <TourImage 
-                  src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/300x200?text=No+Image'} 
-                  alt={tour.title}
-                />
+                <TourImageContainer>
+                  <TourImage 
+                    src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/300x200?text=No+Image'} 
+                    alt={tour.title}
+                  />
+                </TourImageContainer>
                 <TourContent>
                   <TourTitle>
                     <Link to={`/tour/${tour._id}`}>{tour.title}</Link>
@@ -488,10 +579,24 @@ const ToursContent: React.FC = (): React.ReactElement => {
                         <span>Còn {tour.remainingSeats}/{tour.maxPeople} chỗ</span>
                       </TourInfo>
                     </div>
-                    <BookNowButton onClick={() => handleBookNow(tour._id)}>
-                      <FaShoppingCart />
-                      Đặt ngay
-                    </BookNowButton>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <DetailButton to={`/tour/${tour._id}`}>
+                        <FaArrowRight />
+                        Chi tiết
+                      </DetailButton>
+                      <FavoriteButton
+                        isFavorite={favorites.includes(tour._id)}
+                        onClick={() => handleFavorite(tour._id)}
+                        title={favorites.includes(tour._id) ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+                      >
+                        <FaHeart />
+                        {favorites.includes(tour._id) ? "Đã thích" : "Thích"}
+                      </FavoriteButton>
+                      <BookNowButton onClick={() => handleBookNow(tour._id)}>
+                        <FaShoppingCart />
+                        Đặt ngay
+                      </BookNowButton>
+                    </div>
                   </TourFooter>
                 </TourContent>
               </TourCard>

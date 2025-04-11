@@ -1,9 +1,20 @@
+import { PaymentMethod, PaymentStatus } from './booking';
+
 export interface Payment {
     booking: string;
     user: string;
     currency: string;
-    paymentMethod: string;
+    paymentMethod: PaymentMethod;
     transactionId: string;
-    paymentStatus: string;
-    paidAt: Date
+    paymentStatus: PaymentStatus;
+    paidAt: Date;
+    amount: number;
+    amountInUSD?: number;
+}
+
+export interface PaymentRequest {
+    bookingId: string;
+    userId: string;
+    amount: number;
+    method: PaymentMethod;
 }

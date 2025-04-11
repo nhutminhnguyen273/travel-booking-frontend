@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaPhone, FaBirthdayCake, FaVenusMars } from 'react-icons/fa';
 import authService from '../../services/authService';
 import type { Register } from '../../types/auth';
 
@@ -19,7 +19,7 @@ const RegisterForm = styled.form`
   border-radius: 10px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
 `;
 
 const Title = styled.h2`
@@ -44,6 +44,27 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: #667eea;
+  }
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 10px 40px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+  background-color: white;
+  color: #333;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  option {
+    color: #333;
+    background-color: white;
   }
 `;
 
@@ -92,7 +113,24 @@ const ErrorMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
-interface RegisterFormData extends Register {
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+interface RegisterFormData {
+  username: string;
+  fullName: string;
+  dateOfBirth: string;
+  gender: string;
+  email: string;
+  phone: string;
+  password: string;
   confirmPassword: string;
 }
 
@@ -111,7 +149,7 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: RegisterFormData) => ({
       ...prev,
@@ -146,50 +184,107 @@ const RegisterPage = () => {
       <RegisterForm onSubmit={handleSubmit}>
         <Title>Đăng ký</Title>
         {error && <ErrorMessage>{error}</ErrorMessage>}
-        <InputGroup>
-          <Icon><FaUser /></Icon>
-          <Input
-            type="text"
-            name="username"
-            placeholder="Tên đăng nhập"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
-        </InputGroup>
-        <InputGroup>
-          <Icon><FaEnvelope /></Icon>
-          <Input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </InputGroup>
-        <InputGroup>
-          <Icon><FaLock /></Icon>
-          <Input
-            type="password"
-            name="password"
-            placeholder="Mật khẩu"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </InputGroup>
-        <InputGroup>
-          <Icon><FaLock /></Icon>
-          <Input
-            type="password"
-            name="confirmPassword"
-            placeholder="Xác nhận mật khẩu"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-        </InputGroup>
+        
+        <FormGrid>
+          <InputGroup>
+            <Icon><FaUser /></Icon>
+            <Input
+              type="text"
+              name="username"
+              placeholder="Tên đăng nhập"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <Icon><FaUser /></Icon>
+            <Input
+              type="text"
+              name="fullName"
+              placeholder="Họ và tên"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <Icon><FaBirthdayCake /></Icon>
+            <Input
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleChange}
+              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <Icon><FaVenusMars /></Icon>
+            <Select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Chọn giới tính</option>
+              <option value="male">Nam</option>
+              <option value="female">Nữ</option>
+              <option value="other">Khác</option>
+            </Select>
+          </InputGroup>
+
+          <InputGroup>
+            <Icon><FaEnvelope /></Icon>
+            <Input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <Icon><FaPhone /></Icon>
+            <Input
+              type="tel"
+              name="phone"
+              placeholder="Số điện thoại"
+              value={formData.phone}
+              onChange={handleChange}
+              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <Icon><FaLock /></Icon>
+            <Input
+              type="password"
+              name="password"
+              placeholder="Mật khẩu"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <Icon><FaLock /></Icon>
+            <Input
+              type="password"
+              name="confirmPassword"
+              placeholder="Xác nhận mật khẩu"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          </InputGroup>
+        </FormGrid>
+
         <Button type="submit" disabled={loading}>
           {loading ? 'Đang đăng ký...' : 'Đăng ký'}
         </Button>

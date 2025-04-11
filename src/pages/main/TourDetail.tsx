@@ -6,6 +6,7 @@ import tourService from '../../services/tourService';
 import { Tour } from '../../types/tour';
 import { ErrorBoundary } from 'react-error-boundary';
 import authService from '../../services/authService';
+import { toast } from 'react-toastify';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -222,11 +223,20 @@ const TourDetailContent: React.FC = () => {
       }
 
       try {
-        const data = await tourService.getTourById(id);
-        setTour(data);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to load tour details. Please try again later.');
+        setLoading(true);
+        const response = await tourService.getTourById(id);
+        console.log('Tour details response:', response);
+        
+        if (response) {
+          setTour(response);
+        } else {
+          setError('Tour not found');
+        }
+      } catch (err: any) {
+        console.error('Error fetching tour:', err);
+        setError(err.message || 'Failed to load tour details');
+        toast.error('Không thể tải thông tin tour. Vui lòng thử lại sau.');
+      } finally {
         setLoading(false);
       }
     };
@@ -234,11 +244,20 @@ const TourDetailContent: React.FC = () => {
     fetchTour();
   }, [id]);
 
+  const handleBookNow = () => {
+    if (!authService.isAuthenticated()) {
+      toast.info('Vui lòng đăng nhập để đặt tour');
+      navigate('/login');
+      return;
+    }
+    navigate(`/booking/${id}`);
+  };
+
   if (loading) {
     return (
       <Wrapper>
         <TourDetailContainer>
-          <PageTitle>Loading tour details...</PageTitle>
+          <PageTitle>Đang tải thông tin tour...</PageTitle>
         </TourDetailContainer>
       </Wrapper>
     );
@@ -248,7 +267,7 @@ const TourDetailContent: React.FC = () => {
     return (
       <Wrapper>
         <TourDetailContainer>
-          <PageTitle>{error || 'Tour not found'}</PageTitle>
+          <PageTitle>{error || 'Không tìm thấy tour'}</PageTitle>
         </TourDetailContainer>
       </Wrapper>
     );
@@ -282,7 +301,10 @@ const TourDetailContent: React.FC = () => {
           </TourLocation>
         </TourHeader>
 
-        <TourImage src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/800x400?text=No+Image'} alt={tour.title} />
+        <TourImage 
+          src={tour.images && tour.images.length > 0 ? tour.images[0] : 'https://via.placeholder.com/800x400?text=No+Image'} 
+          alt={tour.title} 
+        />
 
         <TourGrid>
           <TourContent>
@@ -342,8 +364,13 @@ const TourDetailContent: React.FC = () => {
               
               <TourPrice>{formatPrice(tour.price)}</TourPrice>
               
-              <BookButton onClick={() => navigate(`/booking/${tour._id}`)}>
-                Đặt ngay
+              <BookButton 
+                onClick={handleBookNow}
+                disabled={tour.status !== 'available' || tour.remainingSeats <= 0}
+              >
+                {tour.status === 'available' && tour.remainingSeats > 0 
+                  ? 'Đặt ngay' 
+                  : 'Hết chỗ'}
               </BookButton>
             </TourInfoCard>
           </TourSidebar>

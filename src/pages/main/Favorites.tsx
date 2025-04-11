@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { FaHeart, FaMapMarkerAlt, FaCalendarAlt, FaTrash } from 'react-icons/fa';
-import MainLayout from '../../components/layout/MainLayout';
+import { FaHeart, FaMapMarkerAlt, FaCalendarAlt, FaTrash, FaArrowRight } from 'react-icons/fa';
+import favoriteService, { FavoriteTour } from '../../services/favoriteService';
+import { toast } from 'react-toastify';
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -157,10 +158,18 @@ const TourPrice = styled.div`
   }
 `;
 
-const ViewButton = styled(Link)`
+const TourFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  gap: 1rem;
+`;
+
+const DetailButton = styled(Link)`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
+  gap: 0.5rem;
   color: ${props => props.theme.colors.primary};
   text-decoration: none;
   font-weight: 500;
@@ -170,126 +179,151 @@ const ViewButton = styled(Link)`
   }
 `;
 
-interface Tour {
-  id: number;
-  name: string;
-  image: string;
-  price: string;
-  location: string;
-  duration: string;
+interface FavoriteResponse {
+  message: string;
+  data: FavoriteTour[];
 }
 
 const Favorites = () => {
-  const [favorites, setFavorites] = useState<Tour[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteTour[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading favorites from localStorage or API
-    const loadFavorites = () => {
-      const demoFavorites = [
-        {
-          id: 1,
-          name: 'Tour Đà Lạt 3N2Đ',
-          image: 'https://picsum.photos/id/1036/500/300',
-          price: '3.000.000₫',
-          location: 'Đà Lạt',
-          duration: '3 ngày 2 đêm'
-        },
-        {
-          id: 2,
-          name: 'Tour Phú Quốc Nghỉ Dưỡng',
-          image: 'https://picsum.photos/id/1043/500/300',
-          price: '4.500.000₫',
-          location: 'Phú Quốc',
-          duration: '4 ngày 3 đêm'
-        },
-        // Add more demo favorites here
-      ];
-
-      setFavorites(demoFavorites);
-      setLoading(false);
+    const loadFavorites = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await favoriteService.getFavorites();
+        console.log('Raw API Response:', response);
+        
+        if (response && response.data) {
+          console.log('Response data:', response.data);
+          // Filter out any invalid favorites
+          const validFavorites = response.data.filter(fav => {
+            console.log('Checking favorite:', fav);
+            const isValid = Boolean(
+              fav && 
+              fav.tour && 
+              fav.tour._id && 
+              fav.tour.title && 
+              typeof fav.tour.price === 'number'
+            );
+            console.log('Favorite tour data:', fav.tour);
+            console.log('Is valid:', isValid);
+            return isValid;
+          });
+          console.log('Valid favorites:', validFavorites);
+          setFavorites(validFavorites);
+        } else {
+          console.log('No valid data in response');
+          setFavorites([]);
+        }
+      } catch (err: any) {
+        console.error('Error loading favorites:', err);
+        setError(err.message || 'Không thể tải danh sách yêu thích');
+        setFavorites([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadFavorites();
   }, []);
 
-  const handleRemoveFavorite = (tourId: number) => {
-    setFavorites(prev => prev.filter(tour => tour.id !== tourId));
+  const handleRemoveFavorite = async (tourId: string) => {
+    try {
+      await favoriteService.removeFavorite(tourId);
+      setFavorites(prev => prev.filter(fav => fav.tour._id !== tourId));
+      toast.success('Đã xóa tour khỏi danh sách yêu thích');
+    } catch (err: any) {
+      console.error('Error removing favorite:', err);
+      toast.error(err.message || 'Không thể xóa tour khỏi yêu thích');
+    }
   };
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <PageWrapper>
-          <Container>
-            <Header>
-              <Title>Đang tải...</Title>
-            </Header>
-          </Container>
-        </PageWrapper>
-      </MainLayout>
-    );
-  }
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  };
 
   return (
-    <MainLayout>
-      <PageWrapper>
-        <Container>
-          <Header>
-            <Title>Tour yêu thích</Title>
-            <Subtitle>Danh sách các tour bạn đã lưu</Subtitle>
-          </Header>
+    <PageWrapper>
+      <Container>
+        <Header>
+          <Title>Tour yêu thích</Title>
+          <Subtitle>Danh sách các tour bạn đã lưu</Subtitle>
+        </Header>
 
-          {favorites.length === 0 ? (
-            <EmptyState>
-              <EmptyStateIcon>
-                <FaHeart />
-              </EmptyStateIcon>
-              <EmptyStateText>
-                Bạn chưa có tour yêu thích nào
-              </EmptyStateText>
-              <ExploreButton to="/tours">
-                Khám phá các tour
-              </ExploreButton>
-            </EmptyState>
-          ) : (
-            <TourGrid>
-              {favorites.map(tour => (
-                <TourCard key={tour.id}>
-                  <TourImage image={tour.image}>
+        {loading ? (
+          <div>Đang tải...</div>
+        ) : error ? (
+          <div>{error}</div>
+        ) : favorites.length === 0 ? (
+          <EmptyState>
+            <EmptyStateIcon>
+              <FaHeart />
+            </EmptyStateIcon>
+            <EmptyStateText>
+              Bạn chưa có tour yêu thích nào
+            </EmptyStateText>
+            <ExploreButton to="/tours">
+              Khám phá các tour
+            </ExploreButton>
+          </EmptyState>
+        ) : (
+          <TourGrid>
+            {favorites.map(favorite => {
+              console.log('Rendering favorite:', favorite);
+              return (
+                <TourCard key={favorite._id}>
+                  <TourImage image={favorite.tour.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image'}>
                     <RemoveButton
-                      onClick={() => handleRemoveFavorite(tour.id)}
+                      onClick={() => handleRemoveFavorite(favorite.tour._id)}
                       title="Xóa khỏi yêu thích"
                     >
                       <FaTrash />
                     </RemoveButton>
                   </TourImage>
                   <TourContent>
-                    <TourTitle to={`/tour/${tour.id}`}>
-                      {tour.name}
+                    <TourTitle to={`/tours/${favorite.tour._id}`}>
+                      {favorite.tour.title || 'Không có tên tour'}
                     </TourTitle>
                     <TourInfo>
                       <FaMapMarkerAlt />
-                      {tour.location}
+                      {favorite.tour.location || 'Không có địa điểm'}
                     </TourInfo>
                     <TourInfo>
                       <FaCalendarAlt />
-                      {tour.duration}
+                      {favorite.tour.duration || 'Không có thời gian'}
                     </TourInfo>
-                    <TourPrice>
-                      <span>{tour.price}</span>
-                      <ViewButton to={`/tour/${tour.id}`}>
-                        Chi tiết
-                      </ViewButton>
-                    </TourPrice>
+                    <TourFooter>
+                      <TourPrice>
+                        <span>{formatPrice(favorite.tour.price || 0)}</span>
+                      </TourPrice>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <DetailButton to={`/tour/${favorite.tour._id}`}>
+                          <FaArrowRight />
+                          Chi tiết
+                        </DetailButton>
+                        <RemoveButton
+                          onClick={() => handleRemoveFavorite(favorite.tour._id)}
+                          title="Xóa khỏi yêu thích"
+                        >
+                          <FaTrash />
+                        </RemoveButton>
+                      </div>
+                    </TourFooter>
                   </TourContent>
                 </TourCard>
-              ))}
-            </TourGrid>
-          )}
-        </Container>
-      </PageWrapper>
-    </MainLayout>
+              );
+            })}
+          </TourGrid>
+        )}
+      </Container>
+    </PageWrapper>
   );
 };
 

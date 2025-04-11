@@ -1,34 +1,34 @@
 import axiosInstance from '../config/axios';
-import { Payment } from '../types/payment';
+import { Payment, PaymentRequest } from '../types/payment';
 
 export const paymentService = {
     // Create a new payment
-    createPayment: async (paymentData: Omit<Payment, 'paidAt'>) => {
-        const response = await axiosInstance.post('/payments', paymentData);
+    createPayment: async (paymentData: PaymentRequest) => {
+        const response = await axiosInstance.post('/payment/create', paymentData);
         return response.data;
     },
 
     // Get payment by booking ID
     getPaymentByBooking: async (bookingId: string) => {
-        const response = await axiosInstance.get(`/payments/booking/${bookingId}`);
+        const response = await axiosInstance.get(`/payment/booking/${bookingId}`);
         return response.data;
     },
 
     // Get payment by user ID
     getPaymentsByUser: async (userId: string) => {
-        const response = await axiosInstance.get(`/payments/user/${userId}`);
+        const response = await axiosInstance.get(`/payment/user/${userId}`);
         return response.data;
     },
 
     // Update payment status
     updatePaymentStatus: async (paymentId: string, status: string) => {
-        const response = await axiosInstance.put(`/payments/${paymentId}/status`, { status });
+        const response = await axiosInstance.put(`/payment/${paymentId}/status`, { status });
         return response.data;
     },
 
     // Get payment by ID
     getPaymentById: async (paymentId: string) => {
-        const response = await axiosInstance.get(`/payments/${paymentId}`);
+        const response = await axiosInstance.get(`/payment/${paymentId}`);
         return response.data;
     }
 };
