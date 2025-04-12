@@ -4,7 +4,6 @@ import MainLayout from './components/layout/MainLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import { AuthProvider } from './contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
-import PaymentResult from './pages/main/PaymentResult';
 
 const AppContainer = styled.div`
   min-height: 100vh;

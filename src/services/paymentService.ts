@@ -14,6 +14,12 @@ export const paymentService = {
         return response.data;
     },
 
+    // Get payment history
+    getPaymentHistory: async () => {
+        const response = await axiosInstance.get('/payment/history');
+        return response.data;
+    },
+
     // Get payment by user ID
     getPaymentsByUser: async (userId: string) => {
         const response = await axiosInstance.get(`/payment/user/${userId}`);

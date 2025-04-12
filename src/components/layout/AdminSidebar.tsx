@@ -60,6 +60,9 @@ const AdminSidebar: React.FC = () => {
         <NavItem to="/admin/blogs" $active={location.pathname === '/admin/blogs'}>
           <FaEnvelope /> Quản lý blogs
         </NavItem>
+        <NavItem to="/admin/bookings" $active={location.pathname === '/admin/bookings'}>
+          <FaEnvelope /> Quản lý đặt tours
+        </NavItem>
       </nav>
     </SidebarContainer>
   );

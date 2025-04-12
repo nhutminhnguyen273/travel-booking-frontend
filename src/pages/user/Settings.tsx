@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { FaBell, FaLock, FaLanguage, FaMoon } from 'react-icons/fa';
-import MainLayout from '../../components/layout/MainLayout';
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -192,126 +191,124 @@ const Settings = () => {
   };
 
   return (
-    <MainLayout>
-      <PageWrapper>
-        <Container>
-          <Title>Cài đặt tài khoản</Title>
-          <Subtitle>Tùy chỉnh trải nghiệm của bạn</Subtitle>
+    <PageWrapper>
+      <Container>
+        <Title>Cài đặt tài khoản</Title>
+        <Subtitle>Tùy chỉnh trải nghiệm của bạn</Subtitle>
 
-          <SettingsGrid>
-            <SettingsCard>
-              <CardHeader>
-                <FaBell />
-                <CardTitle>Thông báo</CardTitle>
-              </CardHeader>
-              
-              <SettingItem>
-                <SettingLabel>Thông báo qua email</SettingLabel>
-                <SettingDescription>
-                  Nhận thông báo về đặt tour và khuyến mãi qua email
-                </SettingDescription>
-                <Toggle>
-                  <ToggleInput
-                    type="checkbox"
-                    checked={settings.emailNotifications}
-                    onChange={e => handleSettingChange('emailNotifications', e.target.checked)}
-                  />
-                  <ToggleSlider />
-                </Toggle>
-              </SettingItem>
+        <SettingsGrid>
+          <SettingsCard>
+            <CardHeader>
+              <FaBell />
+              <CardTitle>Thông báo</CardTitle>
+            </CardHeader>
 
-              <SettingItem>
-                <SettingLabel>Thông báo đẩy</SettingLabel>
-                <SettingDescription>
-                  Nhận thông báo trực tiếp trên trình duyệt
-                </SettingDescription>
-                <Toggle>
-                  <ToggleInput
-                    type="checkbox"
-                    checked={settings.pushNotifications}
-                    onChange={e => handleSettingChange('pushNotifications', e.target.checked)}
-                  />
-                  <ToggleSlider />
-                </Toggle>
-              </SettingItem>
-            </SettingsCard>
+            <SettingItem>
+              <SettingLabel>Thông báo qua email</SettingLabel>
+              <SettingDescription>
+                Nhận thông báo về đặt tour và khuyến mãi qua email
+              </SettingDescription>
+              <Toggle>
+                <ToggleInput
+                  type="checkbox"
+                  checked={settings.emailNotifications}
+                  onChange={e => handleSettingChange('emailNotifications', e.target.checked)}
+                />
+                <ToggleSlider />
+              </Toggle>
+            </SettingItem>
 
-            <SettingsCard>
-              <CardHeader>
-                <FaLock />
-                <CardTitle>Bảo mật</CardTitle>
-              </CardHeader>
-              
-              <SettingItem>
-                <SettingLabel>Đổi mật khẩu</SettingLabel>
-                <SettingDescription>
-                  Cập nhật mật khẩu để bảo vệ tài khoản của bạn
-                </SettingDescription>
-                <Button onClick={() => alert('Tính năng đang được phát triển')}>
-                  Đổi mật khẩu
-                </Button>
-              </SettingItem>
-            </SettingsCard>
+            <SettingItem>
+              <SettingLabel>Thông báo đẩy</SettingLabel>
+              <SettingDescription>
+                Nhận thông báo trực tiếp trên trình duyệt
+              </SettingDescription>
+              <Toggle>
+                <ToggleInput
+                  type="checkbox"
+                  checked={settings.pushNotifications}
+                  onChange={e => handleSettingChange('pushNotifications', e.target.checked)}
+                />
+                <ToggleSlider />
+              </Toggle>
+            </SettingItem>
+          </SettingsCard>
 
-            <SettingsCard>
-              <CardHeader>
-                <FaLanguage />
-                <CardTitle>Ngôn ngữ</CardTitle>
-              </CardHeader>
-              
-              <SettingItem>
-                <SettingLabel>Ngôn ngữ hiển thị</SettingLabel>
-                <SettingDescription>
-                  Chọn ngôn ngữ bạn muốn sử dụng
-                </SettingDescription>
-                <Select
-                  value={settings.language}
-                  onChange={e => handleSettingChange('language', e.target.value)}
-                >
-                  <option value="vi">Tiếng Việt</option>
-                  <option value="en">English</option>
-                </Select>
-              </SettingItem>
-            </SettingsCard>
+          <SettingsCard>
+            <CardHeader>
+              <FaLock />
+              <CardTitle>Bảo mật</CardTitle>
+            </CardHeader>
 
-            <SettingsCard>
-              <CardHeader>
-                <FaMoon />
-                <CardTitle>Giao diện</CardTitle>
-              </CardHeader>
-              
-              <SettingItem>
-                <SettingLabel>Chế độ tối</SettingLabel>
-                <SettingDescription>
-                  Bật chế độ tối để giảm mỏi mắt khi sử dụng ban đêm
-                </SettingDescription>
-                <Toggle>
-                  <ToggleInput
-                    type="checkbox"
-                    checked={settings.darkMode}
-                    onChange={e => handleSettingChange('darkMode', e.target.checked)}
-                  />
-                  <ToggleSlider />
-                </Toggle>
-              </SettingItem>
-            </SettingsCard>
-          </SettingsGrid>
+            <SettingItem>
+              <SettingLabel>Đổi mật khẩu</SettingLabel>
+              <SettingDescription>
+                Cập nhật mật khẩu để bảo vệ tài khoản của bạn
+              </SettingDescription>
+              <Button onClick={() => alert('Tính năng đang được phát triển')}>
+                Đổi mật khẩu
+              </Button>
+            </SettingItem>
+          </SettingsCard>
 
-          <Button
-            style={{ maxWidth: '200px', margin: '2rem auto 0' }}
-            onClick={handleSaveSettings}
-          >
-            Lưu cài đặt
-          </Button>
+          <SettingsCard>
+            <CardHeader>
+              <FaLanguage />
+              <CardTitle>Ngôn ngữ</CardTitle>
+            </CardHeader>
 
-          {showSuccess && (
-            <SuccessMessage>
-              Cài đặt đã được lưu thành công!
-            </SuccessMessage>
-          )}
-        </Container>
-      </PageWrapper>
-    </MainLayout>
+            <SettingItem>
+              <SettingLabel>Ngôn ngữ hiển thị</SettingLabel>
+              <SettingDescription>
+                Chọn ngôn ngữ bạn muốn sử dụng
+              </SettingDescription>
+              <Select
+                value={settings.language}
+                onChange={e => handleSettingChange('language', e.target.value)}
+              >
+                <option value="vi">Tiếng Việt</option>
+                <option value="en">English</option>
+              </Select>
+            </SettingItem>
+          </SettingsCard>
+
+          <SettingsCard>
+            <CardHeader>
+              <FaMoon />
+              <CardTitle>Giao diện</CardTitle>
+            </CardHeader>
+
+            <SettingItem>
+              <SettingLabel>Chế độ tối</SettingLabel>
+              <SettingDescription>
+                Bật chế độ tối để giảm mỏi mắt khi sử dụng ban đêm
+              </SettingDescription>
+              <Toggle>
+                <ToggleInput
+                  type="checkbox"
+                  checked={settings.darkMode}
+                  onChange={e => handleSettingChange('darkMode', e.target.checked)}
+                />
+                <ToggleSlider />
+              </Toggle>
+            </SettingItem>
+          </SettingsCard>
+        </SettingsGrid>
+
+        <Button
+          style={{ maxWidth: '200px', margin: '2rem auto 0' }}
+          onClick={handleSaveSettings}
+        >
+          Lưu cài đặt
+        </Button>
+
+        {showSuccess && (
+          <SuccessMessage>
+            Cài đặt đã được lưu thành công!
+          </SuccessMessage>
+        )}
+      </Container>
+    </PageWrapper>
   );
 };
 

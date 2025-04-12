@@ -1,19 +1,18 @@
 import axiosInstance from '../config/axios';
-import { PaymentMethod, BookingData, BookingStatus, PaymentStatus } from '../types/booking';
-
-export interface Booking extends BookingData {
-  _id: string;
-  user: string;
-  status: BookingStatus;
-  paymentStatus: PaymentStatus;
-  createdAt: string;
-  updatedAt: string;
-}
+import { PaymentMethod, BookingData, BookingStatus, PaymentStatus, Booking } from '../types/booking';
 
 export interface StripePaymentIntent {
   clientSecret: string;
   totalAmount: number;
   currency: string;
+}
+
+export interface UpdateBookingStatus {
+  status: BookingStatus;
+}
+
+export interface UpdatePaymentStatus {
+  paymentStatus: PaymentStatus;
 }
 
 const bookingService = {
@@ -25,8 +24,23 @@ const bookingService = {
                 throw new Error('User ID is required for booking');
             }
 
+            // Ensure payment method is included
+            if (!bookingData.paymentMethod) {
+                throw new Error('Payment method is required');
+            }
+
             console.log('Creating booking with data:', JSON.stringify(bookingData, null, 2));
-            const response = await axiosInstance.post('/booking', bookingData);
+            const response = await axiosInstance.post('/booking', {
+                ...bookingData,
+                paymentMethod: 'stripe' // Force payment method to be 'stripe'
+            });
+            
+            console.log('Booking response:', response.data);
+            
+            if (!response.data || !response.data.data) {
+                throw new Error('Invalid response from server');
+            }
+            
             return response.data;
         } catch (error: any) {
             console.error('Booking error response:', error.response?.data);
@@ -87,9 +101,9 @@ const bookingService = {
     },
 
     // Update a booking
-    updateBooking: async (id: string, bookingData: Partial<BookingData>) => {
+    updateBooking: async (id: string, data: Partial<Booking>) => {
         try {
-            const response = await axiosInstance.put(`/booking/${id}`, bookingData);
+            const response = await axiosInstance.put(`/booking/${id}`, data);
             return response.data;
         } catch (error: any) {
             console.error('Error updating booking:', error);
@@ -98,38 +112,46 @@ const bookingService = {
     },
 
     // Delete a booking
-    deleteBooking: async (bookingId: string) => {
-        const response = await axiosInstance.delete(`/booking/${bookingId}`);
-        return response.data;
-    },
-
-    getBookings: async () => {
+    deleteBooking: async (id: string) => {
         try {
-            const response = await axiosInstance.get('/booking/users');
+            const response = await axiosInstance.delete(`/booking/${id}`);
             return response.data;
         } catch (error: any) {
-            console.error('Error fetching bookings:', error);
+            console.error('Error deleting booking:', error);
             throw error;
         }
     },
 
-    confirmBooking: async (id: string) => {
+    // Update booking status
+    updateBookingStatus: async (id: string, status: BookingStatus) => {
         try {
-            const response = await axiosInstance.put(`/booking/confirm/${id}`);
+            const response = await axiosInstance.put(`/booking/${id}/status`, { status });
             return response.data;
         } catch (error: any) {
-            console.error('Error confirming booking:', error);
+            console.error('Error updating booking status:', error);
             throw error;
         }
     },
 
-    cancelBooking: async (id: string) => {
+    // Update payment status
+    updatePaymentStatus: async (id: string, paymentStatus: PaymentStatus) => {
         try {
-            const response = await axiosInstance.put(`/booking/cancel/${id}`);
+            const response = await axiosInstance.put(`/booking/${id}/payment-status`, { paymentStatus });
             return response.data;
         } catch (error: any) {
-            console.error('Error canceling booking:', error);
+            console.error('Error updating payment status:', error);
             throw error;
+        }
+    },
+
+    // Get all bookings
+    getAllBookings: async (): Promise<{ message: string; data: Booking[] }> => {
+        try {
+            const response = await axiosInstance.get<{ message: string; data: Booking[] }>('/booking');
+            return response.data;
+        } catch (error: any) {
+            console.error('Error fetching all bookings:', error);
+            throw new Error(error.response?.data?.message || 'Không thể lấy danh sách đặt tour');
         }
     }
 };

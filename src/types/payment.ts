@@ -1,15 +1,19 @@
 import { PaymentMethod, PaymentStatus } from './booking';
 
 export interface Payment {
-    booking: string;
+    _id: string;
+    booking: string | null;
     user: string;
-    currency: string;
-    paymentMethod: PaymentMethod;
-    transactionId: string;
-    paymentStatus: PaymentStatus;
-    paidAt: Date;
     amount: number;
-    amountInUSD?: number;
+    paymentMethod: PaymentMethod;
+    status: PaymentStatus;
+    transactionId: string;
+    metadata: {
+        clientSecret: string;
+        [key: string]: any;
+    };
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface PaymentRequest {

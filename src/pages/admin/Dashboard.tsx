@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { FaUsers, FaShoppingCart, FaPlaneDeparture, FaChartBar } from 'react-icons/fa';
+import { FaUsers, FaShoppingCart, FaPlaneDeparture, FaChartBar, FaMoneyBillWave, FaClock, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import statisticalService, { StatisticalData } from '../../services/statisticalService';
 
 const DashboardContainer = styled.div`
   padding: ${props => props.theme.spacing.lg};
@@ -71,8 +72,45 @@ const TourItem = styled.div`
   font-size: ${(props) => props.theme.fontSizes.base};
 `;
 
+const StatSection = styled.div`
+  margin-bottom: ${props => props.theme.spacing.xl};
+`;
+
+const SectionTitle = styled.h2`
+  font-size: ${props => props.theme.fontSizes.lg};
+  color: ${props => props.theme.colors.primary};
+  margin-bottom: ${props => props.theme.spacing.base};
+`;
+
 const Dashboard: React.FC = () => {
   const theme = useTheme();
+  const [statistics, setStatistics] = useState<StatisticalData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        const response = await statisticalService.getDailyStatistics();
+        setStatistics(response.data);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message || 'Không thể tải dữ liệu thống kê');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStatistics();
+  }, []);
+
+  if (loading) {
+    return <div>Đang tải...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
 
   return (
     <DashboardContainer>
@@ -85,37 +123,97 @@ const Dashboard: React.FC = () => {
             <FaUsers size={32} color={theme.colors.primary} />
             <StatInfo>
               <StatLabel>Người dùng</StatLabel>
-              <StatValue>1,230</StatValue>
+              <StatValue>{statistics?.totalUsers || 0}</StatValue>
             </StatInfo>
           </StatCard>
           <StatCard>
             <FaShoppingCart size={32} color={theme.colors.secondary} />
             <StatInfo>
               <StatLabel>Đơn hàng</StatLabel>
-              <StatValue>245</StatValue>
+              <StatValue>{statistics?.totalBookings || 0}</StatValue>
             </StatInfo>
           </StatCard>
           <StatCard>
             <FaPlaneDeparture size={32} color={theme.colors.accent} />
             <StatInfo>
               <StatLabel>Tour đang diễn ra</StatLabel>
-              <StatValue>38</StatValue>
+              <StatValue>{statistics?.totalTours || 0}</StatValue>
             </StatInfo>
           </StatCard>
           <StatCard>
             <FaChartBar size={32} color={theme.colors.success} />
             <StatInfo>
               <StatLabel>Doanh thu</StatLabel>
-              <StatValue>120,000,000₫</StatValue>
+              <StatValue>{statistics?.totalRevenue?.toLocaleString('vi-VN') || 0}₫</StatValue>
             </StatInfo>
           </StatCard>
         </StatGrid>
 
+        <StatSection>
+          <SectionTitle>Trạng thái đơn hàng</SectionTitle>
+          <StatGrid>
+            <StatCard>
+              <FaClock size={24} color={theme.colors.warning} />
+              <StatInfo>
+                <StatLabel>Đang chờ</StatLabel>
+                <StatValue>{statistics?.bookingStatus?.pending || 0}</StatValue>
+              </StatInfo>
+            </StatCard>
+            <StatCard>
+              <FaCheckCircle size={24} color={theme.colors.success} />
+              <StatInfo>
+                <StatLabel>Đã xác nhận</StatLabel>
+                <StatValue>{statistics?.bookingStatus?.confirmed || 0}</StatValue>
+              </StatInfo>
+            </StatCard>
+            <StatCard>
+              <FaTimesCircle size={24} color={theme.colors.error} />
+              <StatInfo>
+                <StatLabel>Đã hủy</StatLabel>
+                <StatValue>{statistics?.bookingStatus?.cancelled || 0}</StatValue>
+              </StatInfo>
+            </StatCard>
+          </StatGrid>
+        </StatSection>
+
+        <StatSection>
+          <SectionTitle>Phương thức thanh toán</SectionTitle>
+          <StatGrid>
+            <StatCard>
+              <FaMoneyBillWave size={24} color={theme.colors.primary} />
+              <StatInfo>
+                <StatLabel>VNPay</StatLabel>
+                <StatValue>{statistics?.paymentMethods?.VNPay || 0}</StatValue>
+              </StatInfo>
+            </StatCard>
+            <StatCard>
+              <FaMoneyBillWave size={24} color={theme.colors.secondary} />
+              <StatInfo>
+                <StatLabel>MoMo</StatLabel>
+                <StatValue>{statistics?.paymentMethods?.MoMo || 0}</StatValue>
+              </StatInfo>
+            </StatCard>
+            <StatCard>
+              <FaMoneyBillWave size={24} color={theme.colors.accent} />
+              <StatInfo>
+                <StatLabel>Stripe</StatLabel>
+                <StatValue>{statistics?.paymentMethods?.Stripe || 0}</StatValue>
+              </StatInfo>
+            </StatCard>
+          </StatGrid>
+        </StatSection>
+
         <RecentTours>
           <h2 style={{ fontSize: theme.fontSizes.lg, marginBottom: theme.spacing.sm }}>Tour Gần Đây</h2>
-          <TourItem>Tour Đà Lạt - 03/2025</TourItem>
-          <TourItem>Tour Hạ Long - 02/2025</TourItem>
-          <TourItem>Tour Phú Quốc - 01/2025</TourItem>
+          {statistics?.revenueByTour && statistics.revenueByTour.length > 0 ? (
+            statistics.revenueByTour.slice(0, 3).map((tour, index) => (
+              <TourItem key={index}>
+                Tour {tour.tour} - {tour.revenue.toLocaleString('vi-VN')}₫
+              </TourItem>
+            ))
+          ) : (
+            <TourItem>Chưa có dữ liệu tour</TourItem>
+          )}
         </RecentTours>
       </DashboardWrapper>
     </DashboardContainer>

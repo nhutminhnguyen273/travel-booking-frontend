@@ -119,7 +119,7 @@ const LoginPage: React.FC = () => {
     try {
       const response = await authService.login(formData);
       login(response.accessToken, response.user);
-      navigate('/');
+      navigate(response.user.role === 'admin' ? '/admin/dashboard' : '/');
     } catch (err: any) {
       setError(err.message || 'Đăng nhập thất bại');
     } finally {

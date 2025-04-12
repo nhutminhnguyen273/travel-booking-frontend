@@ -189,8 +189,8 @@ const Header: React.FC = () => {
                 <DropdownItem to="/favorites">
                   <FaHeart /> Tour yêu thích
                 </DropdownItem>
-                <DropdownItem to="/bookings">
-                  <FaListAlt /> Đơn hàng
+                <DropdownItem to="/payments">
+                  <FaListAlt /> Lịch sử thanh toán
                 </DropdownItem>
                 <DropdownItem to="/settings">
                   <FaCog /> Cài đặt

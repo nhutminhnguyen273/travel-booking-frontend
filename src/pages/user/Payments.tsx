@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { FaCreditCard, FaCalendarAlt, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import MainLayout from '../../components/layout/MainLayout';
 import { paymentService } from '../../services/paymentService';
 import { Payment } from '../../types/payment';
+import { PaymentStatus as PaymentStatusEnum } from '../../types/booking';
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -153,12 +153,8 @@ const Payments = () => {
     const fetchPayments = async () => {
       try {
         setLoading(true);
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          throw new Error('User not authenticated');
-        }
-        const data = await paymentService.getPaymentsByUser(userId);
-        setPayments(data);
+        const response = await paymentService.getPaymentHistory();
+        setPayments(response.data);
       } catch (error) {
         console.error('Error fetching payments:', error);
         setError('Không thể tải lịch sử thanh toán. Vui lòng thử lại sau.');
@@ -176,12 +172,12 @@ const Payments = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'paid':
         return 'Đã thanh toán';
       case 'pending':
         return 'Đang xử lý';
-      case 'failed':
-        return 'Thất bại';
+      case 'cancelled':
+        return 'Đã hủy';
       default:
         return status;
     }
@@ -189,82 +185,76 @@ const Payments = () => {
 
   if (loading) {
     return (
-      <MainLayout>
-        <PageWrapper>
-          <Container>
-            <Title>Đang tải...</Title>
-          </Container>
-        </PageWrapper>
-      </MainLayout>
+      <PageWrapper>
+        <Container>
+          <Title>Đang tải...</Title>
+        </Container>
+      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <MainLayout>
-        <PageWrapper>
-          <Container>
-            <Title>Lỗi</Title>
-            <Subtitle>{error}</Subtitle>
-          </Container>
-        </PageWrapper>
-      </MainLayout>
+      <PageWrapper>
+        <Container>
+          <Title>Lỗi</Title>
+          <Subtitle>{error}</Subtitle>
+        </Container>
+      </PageWrapper>
     );
   }
 
   return (
-    <MainLayout>
-      <PageWrapper>
-        <Container>
-          <Title>Lịch sử thanh toán</Title>
-          <Subtitle>Theo dõi các giao dịch thanh toán của bạn</Subtitle>
+    <PageWrapper>
+      <Container>
+        <Title>Lịch sử thanh toán</Title>
+        <Subtitle>Theo dõi các giao dịch thanh toán của bạn</Subtitle>
 
-          {payments.length === 0 ? (
-            <EmptyState>
-              <EmptyStateText>
-                Bạn chưa có giao dịch thanh toán nào
-              </EmptyStateText>
-              <ExploreButton to="/tours">
-                Khám phá các tour
-              </ExploreButton>
-            </EmptyState>
-          ) : (
-            <PaymentList>
-              {payments.map(payment => (
-                <PaymentCard key={payment.transactionId}>
-                  <PaymentHeader>
-                    <PaymentId>Mã giao dịch: {payment.transactionId}</PaymentId>
-                    <PaymentStatus status={payment.paymentStatus}>
-                      {getStatusText(payment.paymentStatus)}
-                    </PaymentStatus>
-                  </PaymentHeader>
-                  <PaymentContent>
-                    <PaymentInfo>
-                      <InfoItem>
-                        <FaCreditCard />
-                        {payment.paymentMethod}
-                      </InfoItem>
-                      <InfoItem>
-                        <FaCalendarAlt />
-                        {formatDate(payment.paidAt)}
-                      </InfoItem>
-                      <InfoItem>
-                        {payment.paymentStatus === 'completed' ? (
-                          <FaCheckCircle style={{ color: 'green' }} />
-                        ) : (
-                          <FaTimesCircle style={{ color: 'red' }} />
-                        )}
-                        {payment.currency}
-                      </InfoItem>
-                    </PaymentInfo>
-                  </PaymentContent>
-                </PaymentCard>
-              ))}
-            </PaymentList>
-          )}
-        </Container>
-      </PageWrapper>
-    </MainLayout>
+        {payments.length === 0 ? (
+          <EmptyState>
+            <EmptyStateText>
+              Bạn chưa có giao dịch thanh toán nào
+            </EmptyStateText>
+            <ExploreButton to="/tours">
+              Khám phá các tour
+            </ExploreButton>
+          </EmptyState>
+        ) : (
+          <PaymentList>
+            {payments.map(payment => (
+              <PaymentCard key={payment._id}>
+                <PaymentHeader>
+                  <PaymentId>Mã giao dịch: {payment.transactionId}</PaymentId>
+                  <PaymentStatus status={payment.status}>
+                    {getStatusText(payment.status)}
+                  </PaymentStatus>
+                </PaymentHeader>
+                <PaymentContent>
+                  <PaymentInfo>
+                    <InfoItem>
+                      <FaCreditCard />
+                      {payment.paymentMethod}
+                    </InfoItem>
+                    <InfoItem>
+                      <FaCalendarAlt />
+                      {formatDate(new Date(payment.createdAt))}
+                    </InfoItem>
+                    <InfoItem>
+                      {payment.status === 'paid' ? (
+                        <FaCheckCircle style={{ color: 'green' }} />
+                      ) : (
+                        <FaTimesCircle style={{ color: 'red' }} />
+                      )}
+                      {payment.amount.toLocaleString('vi-VN')} VND
+                    </InfoItem>
+                  </PaymentInfo>
+                </PaymentContent>
+              </PaymentCard>
+            ))}
+          </PaymentList>
+        )}
+      </Container>
+    </PageWrapper>
   );
 };
 

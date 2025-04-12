@@ -7,6 +7,8 @@ export enum PaymentMethod {
 export enum PaymentStatus {
     PENDING = 'pending',
     PAID = 'paid',
+    FAILED = 'failed',
+    REFUNDED = 'refunded',
     CANCELLED = 'cancelled'
 }
 
@@ -29,6 +31,7 @@ export interface Booking {
     paymentMethod: PaymentMethod;
     status: BookingStatus;
     totalAmount: number;
+    totalPrice?: number;
     createdAt?: string;
     updatedAt?: string;
 }

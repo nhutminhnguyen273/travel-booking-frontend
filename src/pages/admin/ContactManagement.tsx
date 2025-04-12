@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaPhone, FaCalendarAlt, FaCheck, FaTimes } from 'react-icons/fa';
 import authService from '../../services/authService';
-import contactService from '../../services/contactService';
+import contactService, { Contact } from '../../services/contactService';
 
 const Wrapper = styled.div`
   padding: ${props => props.theme.spacing.lg};
@@ -112,16 +112,6 @@ const LoadingMessage = styled.div`
   color: ${props => props.theme.colors.text};
 `;
 
-interface Contact {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-  createdAt: string;
-  isRead: boolean;
-}
-
 const ContactManagementContent: React.FC = () => {
   const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -147,25 +137,25 @@ const ContactManagementContent: React.FC = () => {
       setContacts(response.data);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch contacts');
+      setError(err.message || 'Không thể tải danh sách liên hệ');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMarkAsRead = async (id: string) => {
+  const handleUpdateStatus = async (id: string, newStatus: 'pending' | 'processing' | 'completed' | 'cancelled') => {
     try {
-      await contactService.markAsRead(id);
+      await contactService.updateContactStatus(id, newStatus);
       setContacts(contacts.map(contact => 
-        contact._id === id ? { ...contact, isRead: true } : contact
+        contact._id === id ? { ...contact, status: newStatus } : contact
       ));
     } catch (err: any) {
-      setError(err.message || 'Failed to mark contact as read');
+      setError(err.message || 'Không thể cập nhật trạng thái');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this contact?')) {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa liên hệ này?')) {
       return;
     }
 
@@ -173,18 +163,33 @@ const ContactManagementContent: React.FC = () => {
       await contactService.deleteContact(id);
       setContacts(contacts.filter(contact => contact._id !== id));
     } catch (err: any) {
-      setError(err.message || 'Failed to delete contact');
+      setError(err.message || 'Không thể xóa liên hệ');
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString('vi-VN');
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Chờ xử lý';
+      case 'processing':
+        return 'Đang xử lý';
+      case 'completed':
+        return 'Đã hoàn thành';
+      case 'cancelled':
+        return 'Đã hủy';
+      default:
+        return status;
+    }
   };
 
   if (loading) {
     return (
       <Wrapper>
-        <LoadingMessage>Loading contacts...</LoadingMessage>
+        <LoadingMessage>Đang tải...</LoadingMessage>
       </Wrapper>
     );
   }
@@ -200,7 +205,7 @@ const ContactManagementContent: React.FC = () => {
   return (
     <Wrapper>
       <Header>
-        <Title>Contact Management</Title>
+        <Title>Quản lý liên hệ</Title>
       </Header>
       <ContactList>
         {contacts.map((contact) => (
@@ -223,23 +228,27 @@ const ContactManagementContent: React.FC = () => {
                 {contact.phone}
               </InfoItem>
               <InfoItem>
-                <StatusBadge isRead={contact.isRead}>
-                  {contact.isRead ? <FaCheck /> : <FaTimes />}
-                  {contact.isRead ? 'Read' : 'Unread'}
+                <StatusBadge isRead={contact.status === 'completed'}>
+                  {contact.status === 'completed' ? <FaCheck /> : <FaTimes />}
+                  {getStatusText(contact.status)}
                 </StatusBadge>
               </InfoItem>
             </ContactInfo>
 
-            <Message>{contact.message}</Message>
+            <Message>
+              <strong>Tiêu đề:</strong> {contact.subject}
+              <br />
+              <strong>Nội dung:</strong> {contact.message}
+            </Message>
 
             <div>
-              {!contact.isRead && (
-                <ActionButton onClick={() => handleMarkAsRead(contact._id)}>
-                  Mark as Read
+              {contact.status !== 'completed' && (
+                <ActionButton onClick={() => handleUpdateStatus(contact._id, 'completed')}>
+                  Đánh dấu đã xử lý
                 </ActionButton>
               )}
               <ActionButton onClick={() => handleDelete(contact._id)}>
-                Delete
+                Xóa
               </ActionButton>
             </div>
           </ContactCard>

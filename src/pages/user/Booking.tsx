@@ -180,8 +180,7 @@ const Booking = () => {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     startDate: '',
-    people: 1,
-    paymentMethod: PaymentMethod.STRIPE
+    people: 1
   });
   const [showStripePayment, setShowStripePayment] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -277,98 +276,44 @@ const Booking = () => {
       const amountInUSD = totalAmount / exchangeRate;
       
       // Check if amount exceeds Stripe's limit
-      if (formData.paymentMethod === 'stripe' && amountInUSD > 999999.99) {
+      if (amountInUSD > 999999.99) {
         setError('Số tiền thanh toán vượt quá giới hạn cho phép của Stripe ($999,999.99)');
         return;
       }
 
-      // If payment method is Stripe, create a booking and show Stripe payment
-      if (formData.paymentMethod === 'stripe') {
-        try {
-          // Ensure userId is included in booking data
-          if (!userId) {
-            setError('Vui lòng đăng nhập để tiếp tục');
-            return;
-          }
-
-          const bookingData: BookingData = {
-            tour: id!,
-            schedules: [{
-              startDate: formattedStartDate,
-              endDate: formattedEndDate
-            }],
-            peopleCount: formData.people,
-            paymentMethod: PaymentMethod.STRIPE,
-            totalAmount: totalAmount,
-            userId: userId || '',
-            currency: 'vnd',
-            amountInUSD: amountInUSD
-          };
-
-          const response = await bookingService.createBooking(bookingData);
-          console.log('Booking response:', response);
-          
-          if (response && response.data && response.data.booking && response.data.payment) {
-            setBookingId(response.data.booking._id);
-            setShowStripePayment(true);
-            setFormData(prev => ({
-              ...prev,
-              paymentMethod: PaymentMethod.STRIPE
-            }));
-            return;
-          } else {
-            throw new Error('Invalid response format from booking service');
-          }
-        } catch (err: any) {
-          console.error('Stripe booking error:', err);
-          
-          if (err.message && err.message.includes('vượt quá giới hạn của Stripe')) {
-            setError('Số tiền thanh toán vượt quá giới hạn của Stripe (999999.99$). Vui lòng chọn phương thức thanh toán khác hoặc liên hệ admin để được hỗ trợ.');
-          } else if (err.message && err.message.includes('histories validation failed')) {
-            setError('Lỗi xác thực: Vui lòng đăng nhập lại để tiếp tục.');
-            // Redirect to login page
-            navigate('/login');
-          } else {
-            setError(err.message || 'Lỗi khi tạo booking cho thanh toán Stripe');
-          }
-          return;
-        }
+      // Ensure userId is included in booking data
+      if (!userId) {
+        setError('Vui lòng đăng nhập để tiếp tục');
+        return;
       }
 
-      // For other payment methods, proceed with normal flow
-      try {
-        const bookingData: BookingData = {
-          tour: id!,
-          schedules: [{
-            startDate: formattedStartDate,
-            endDate: formattedEndDate
-          }],
-          peopleCount: formData.people,
-          paymentMethod: PaymentMethod.STRIPE,
-          totalAmount: totalAmount,
-          userId: userId || '',
-          currency: 'vnd',
-          amountInUSD: amountInUSD
-        };
-        
-        const response = await bookingService.createBooking(bookingData);
-        console.log('Booking response:', response);
-        
-        // Show success message and navigate directly
-        toast.success('Đặt tour thành công!');
-        navigate('/tours');
-      } catch (err: any) {
-        console.error('Regular booking error:', err);
-        if (err.message && err.message.includes('histories validation failed')) {
-          setError('Lỗi xác thực: Vui lòng đăng nhập lại để tiếp tục.');
-          // Có thể thêm logic để chuyển hướng đến trang đăng nhập ở đây
-        } else {
-          setError(err.message || 'Không thể đặt tour. Vui lòng thử lại sau.');
-        }
+      const bookingData: BookingData = {
+        tour: id!,
+        schedules: [{
+          startDate: formattedStartDate,
+          endDate: formattedEndDate
+        }],
+        peopleCount: formData.people,
+        paymentMethod: PaymentMethod.STRIPE,
+        totalAmount: totalAmount,
+        userId: userId,
+        currency: 'vnd',
+        amountInUSD: amountInUSD
+      };
+
+      console.log('Submitting booking data:', bookingData);
+      const response = await bookingService.createBooking(bookingData);
+      console.log('Booking response:', response);
+      
+      if (response && response.data && response.data.booking && response.data.payment) {
+        setBookingId(response.data.booking._id);
+        setShowStripePayment(true);
+      } else {
+        throw new Error('Invalid response format from booking service');
       }
     } catch (err: any) {
-      console.error('Detailed error:', err);
-      setError(err.message || 'Không thể đặt tour. Vui lòng thử lại sau.');
+      console.error('Stripe booking error:', err);
+      setError(err.message || 'Lỗi khi tạo booking cho thanh toán Stripe');
     }
   };
 
@@ -380,14 +325,38 @@ const Booking = () => {
     }));
   };
 
-  const handleStripeSuccess = (_bookingId: string) => {
-    // Show success message and navigate directly
-    toast.success('Đặt tour thành công!');
-    navigate('/tours');
+  const handleStripeSuccess = (bookingId: string) => {
+    console.log('Booking success:', bookingId);
+    // Store the success state in localStorage
+    localStorage.setItem('paymentSuccess', JSON.stringify({
+      status: 'paid',
+      bookingId: bookingId,
+      timestamp: Date.now()
+    }));
+    console.log('Stored payment success in localStorage');
+
+    // Use window.history.replaceState to update URL without reload
+    window.history.replaceState(
+      { status: 'paid', bookingId },
+      '',
+      '/payment-result'
+    );
+    console.log('Updated URL with replaceState');
+
+    // Then navigate using React Router
+    navigate('/payment-result', { 
+      state: { 
+        status: 'paid',
+        bookingId: bookingId
+      },
+      replace: true
+    });
+    console.log('Navigated to payment result page');
   };
 
   const handleStripeError = (error: string) => {
     setError(error);
+    toast.error(error);
   };
 
   if (loading) {
@@ -438,7 +407,7 @@ const Booking = () => {
           <p>{tour.description}</p>
         </TourInfo>
 
-        <BookingForm onSubmit={handleSubmit}>
+        <BookingForm onSubmit={handleSubmit} noValidate>
           <Title>Đặt tour</Title>
           <FormGroup>
             <Label>Ngày khởi hành</Label>
@@ -463,23 +432,6 @@ const Booking = () => {
               required
             />
           </FormGroup>
-          <FormGroup>
-            <Label>Phương thức thanh toán</Label>
-            <PaymentMethodContainer>
-              <PaymentMethodOption
-                className={formData.paymentMethod === PaymentMethod.STRIPE ? 'selected' : ''}
-                onClick={() => setFormData(prev => ({ ...prev, paymentMethod: PaymentMethod.STRIPE }))}
-              >
-                <PaymentMethodIcon>
-                  <FaCreditCard />
-                </PaymentMethodIcon>
-                <div>
-                  <PaymentMethodLabel>Stripe</PaymentMethodLabel>
-                  <PaymentMethodDescription>Thanh toán bằng thẻ tín dụng/ghi nợ</PaymentMethodDescription>
-                </div>
-              </PaymentMethodOption>
-            </PaymentMethodContainer>
-          </FormGroup>
           {error && <ErrorMessage>{error}</ErrorMessage>}
 
           {showStripePayment && bookingId && userId ? (
@@ -496,19 +448,13 @@ const Booking = () => {
                 bookingId: bookingId,
                 userId: userId,
                 currency: 'vnd'
-              } as unknown as BookingData}
+              }}
               onSuccess={handleStripeSuccess}
               onError={handleStripeError}
             />
           ) : (
-            <SubmitButton
-              type="submit"
-              onClick={(e) => {
-                e.preventDefault();
-                handleSubmit(e);
-              }}
-            >
-              <a href="/tours" style={{ color: 'white', textDecoration: 'none' }}>Đặt tour</a>
+            <SubmitButton type="submit">
+              Đặt tour
             </SubmitButton>
           )}
         </BookingForm>

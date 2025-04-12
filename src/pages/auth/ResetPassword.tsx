@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaLock } from 'react-icons/fa';
@@ -82,6 +82,19 @@ const SuccessMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
+const Links = styled.div`
+  text-align: center;
+  margin-top: 1rem;
+`;
+
+const StyledLink = styled(Link)`
+  color: #667eea;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 const ResetPasswordPage = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -90,7 +103,14 @@ const ResetPasswordPage = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!token) {
+      setError('Token không hợp lệ hoặc đã hết hạn');
+    }
+  }, [token]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -98,32 +118,59 @@ const ResetPasswordPage = () => {
       ...prev,
       [name]: value
     }));
+    if (error) setError('');
+  };
+
+  const validatePassword = () => {
+    if (formData.newPassword.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
+      return false;
+    }
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError('Mật khẩu không khớp');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError('Mật khẩu không khớp');
+    if (!token) {
+      setError('Token không hợp lệ hoặc đã hết hạn');
+      return;
+    }
+
+    if (!validatePassword()) {
       return;
     }
 
     setLoading(true);
 
     try {
-      if (!token) {
-        throw new Error('Token không hợp lệ');
-      }
-      await authService.resetPassword(token, formData);
-      navigate('/auth/login', { 
-        state: { 
-          type: 'success', 
-          message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.' 
-        } 
+      await authService.resetPassword(token, {
+        newPassword: formData.newPassword
       });
+      
+      setSuccess('Đặt lại mật khẩu thành công!');
+      
+      setTimeout(() => {
+        navigate('/auth/login', { 
+          state: { 
+            type: 'success', 
+            message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.' 
+          } 
+        });
+      }, 2000);
+
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể đặt lại mật khẩu');
+      console.error('Reset password error:', err);
+      setError(
+        err.response?.data?.message || 
+        'Không thể đặt lại mật khẩu. Vui lòng thử lại sau.'
+      );
     } finally {
       setLoading(false);
     }
@@ -133,7 +180,10 @@ const ResetPasswordPage = () => {
     <ResetPasswordContainer>
       <ResetPasswordForm onSubmit={handleSubmit}>
         <Title>Đặt lại mật khẩu</Title>
+        
         {error && <ErrorMessage>{error}</ErrorMessage>}
+        {success && <SuccessMessage>{success}</SuccessMessage>}
+        
         <InputGroup>
           <Icon><FaLock /></Icon>
           <Input
@@ -143,8 +193,11 @@ const ResetPasswordPage = () => {
             value={formData.newPassword}
             onChange={handleChange}
             required
+            minLength={6}
+            disabled={loading}
           />
         </InputGroup>
+        
         <InputGroup>
           <Icon><FaLock /></Icon>
           <Input
@@ -154,11 +207,18 @@ const ResetPasswordPage = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
+            minLength={6}
+            disabled={loading}
           />
         </InputGroup>
-        <Button type="submit" disabled={loading}>
+        
+        <Button type="submit" disabled={loading || !token}>
           {loading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
         </Button>
+
+        <Links>
+          <StyledLink to="/auth/login">Quay về trang đăng nhập</StyledLink>
+        </Links>
       </ResetPasswordForm>
     </ResetPasswordContainer>
   );

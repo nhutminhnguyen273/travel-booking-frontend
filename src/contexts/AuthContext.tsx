@@ -30,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const logout = () => {
+        authService.logout();
         setIsAuthenticated(false);
         setUser(null);
     };

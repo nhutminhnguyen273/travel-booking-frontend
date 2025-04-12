@@ -5,6 +5,7 @@ import UserManagement from '../pages/admin/UserManagement';
 import TourManagement from '../pages/admin/TourManagement';
 import VoucherManagement from '../pages/admin/VoucherManagement';
 import ContactManagement from '../pages/admin/ContactManagement';
+import BookingManagement from '../pages/admin/BookingManagement';
 import Profile from '../pages/user/Profile';
 import Bookings from '../pages/user/Booking';
 import Booking from '../pages/user/Booking';
@@ -109,6 +110,10 @@ const privateRoutes = [
           {
             path: 'contacts',
             element: <ContactManagement />
+          },
+          {
+            path: 'bookings',
+            element: <BookingManagement />
           },
           {
             path: 'blogs',

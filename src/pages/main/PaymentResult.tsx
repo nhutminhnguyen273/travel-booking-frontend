@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaCheckCircle, FaTimesCircle, FaArrowLeft } from 'react-icons/fa';
@@ -85,23 +85,50 @@ const HomeButton = styled(Button)`
 const PaymentResult = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state } = location;
-  const isSuccess = state?.status === 'success';
-
+  const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  
+  // Get state from location
+  const state = location.state as { status?: string; bookingId?: string } | null;
+  
+  // Check localStorage for payment success
+  const paymentSuccess = localStorage.getItem('paymentSuccess');
+  const paymentData = paymentSuccess ? JSON.parse(paymentSuccess) : null;
+  
   useEffect(() => {
-    if (!state) {
-      navigate('/');
+    // Clear the payment success data from localStorage
+    if (paymentSuccess) {
+      localStorage.removeItem('paymentSuccess');
+    }
+
+    // Determine success status and booking ID
+    const success = state?.status === 'paid' || paymentData?.status === 'paid';
+    const id = state?.bookingId || paymentData?.bookingId;
+
+    if (!success && !id) {
+      navigate('/', { replace: true });
       return;
     }
 
-    if (isSuccess) {
+    setIsSuccess(success);
+    setBookingId(id);
+
+    if (success) {
       toast.success('Thanh toán thành công!');
     } else {
       toast.error('Thanh toán thất bại. Vui lòng thử lại.');
     }
-  }, [state, isSuccess, navigate]);
+  }, [state, paymentData, navigate, paymentSuccess]);
 
-  if (!state) return null;
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleHome = () => {
+    navigate('/', { replace: true });
+  };
+
+  if (isSuccess === null) return null;
 
   return (
     <ResultContainer>
@@ -121,11 +148,11 @@ const PaymentResult = () => {
         </Message>
 
         <ButtonGroup>
-          <BackButton onClick={() => navigate(-1)}>
+          <BackButton onClick={handleBack}>
             <FaArrowLeft />
             Quay lại
           </BackButton>
-          <HomeButton onClick={() => navigate('/')}>
+          <HomeButton onClick={handleHome}>
             Về trang chủ
           </HomeButton>
         </ButtonGroup>

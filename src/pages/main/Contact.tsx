@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaPaperPlane } from 'react-icons/fa';
+import contactService from '../../services/contactService';
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -184,6 +185,7 @@ const Contact = () => {
     name: '',
     email: '',
     phone: '',
+    subject: '',
     message: ''
   });
   const [error, setError] = useState('');
@@ -203,7 +205,7 @@ const Contact = () => {
     setError('');
     setSuccess(false);
 
-    if (!formData.name || !formData.email || !formData.message) {
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
       setError('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
@@ -211,19 +213,17 @@ const Contact = () => {
     setLoading(true);
 
     try {
-      // TODO: Implement contact form API call
-      // const response = await sendContactForm(formData);
-      // if (response.success) {
-      //   setSuccess(true);
-      //   setFormData({ name: '', email: '', phone: '', message: '' });
-      // }
-
-      // For demo purposes
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await contactService.createContact({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message
+      });
       setSuccess(true);
-      setFormData({ name: '', email: '', phone: '', message: '' });
-    } catch (err) {
-      setError('Đã có lỗi xảy ra. Vui lòng thử lại sau.');
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch (err: any) {
+      setError(err.message || 'Đã có lỗi xảy ra. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -282,6 +282,7 @@ const Contact = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                required
               />
             </InputGroup>
 
@@ -293,6 +294,7 @@ const Contact = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                required
               />
             </InputGroup>
 
@@ -308,12 +310,25 @@ const Contact = () => {
             </InputGroup>
 
             <InputGroup>
+              <Label htmlFor="subject">Tiêu đề *</Label>
+              <Input
+                type="text"
+                id="subject"
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                required
+              />
+            </InputGroup>
+
+            <InputGroup>
               <Label htmlFor="message">Nội dung tin nhắn *</Label>
               <Textarea
                 id="message"
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
+                required
               />
             </InputGroup>
 

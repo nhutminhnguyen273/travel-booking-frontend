@@ -62,9 +62,23 @@ const authService = {
     logout: (): void => {
         console.log('Logging out...');
         // Xóa tất cả cookies liên quan đến authentication
-        Cookies.remove('token', { path: '/' });
-        Cookies.remove('user', { path: '/' });
-        console.log('Cookies cleared');
+        Cookies.remove('token', { path: '/', domain: window.location.hostname });
+        Cookies.remove('user', { path: '/', domain: window.location.hostname });
+        
+        // Xóa tất cả cookies khác
+        const allCookies = Cookies.get();
+        Object.keys(allCookies).forEach(cookieName => {
+            // Xóa cookie với tất cả các domain và path có thể
+            Cookies.remove(cookieName, { path: '/', domain: window.location.hostname });
+            Cookies.remove(cookieName, { path: '/' });
+            Cookies.remove(cookieName);
+        });
+
+        // Xóa tất cả cookies trong localStorage và sessionStorage
+        localStorage.clear();
+        sessionStorage.clear();
+
+        console.log('All cookies and storage cleared');
         // Notify auth state change
         authService.notifyAuthStateChange();
     },
@@ -150,12 +164,23 @@ const authService = {
         }
     },
 
-    resetPassword: async (token: string, data: { newPassword: string; confirmPassword: string }): Promise<AuthResponse> => {
+    resetPassword: async (token: string, data: { newPassword: string }): Promise<AuthResponse> => {
         try {
+            console.log('Sending reset password request with token:', token);
             const response = await axiosInstance.post<AuthResponse>(`/auth/reset-password/${token}`, data);
             return response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.message || 'Không thể đặt lại mật khẩu');
+            console.error('Reset password error details:', error);
+            if (error.response) {
+                // Server responded with error
+                throw new Error(error.response.data?.message || 'Không thể đặt lại mật khẩu');
+            } else if (error.request) {
+                // Request was made but no response received
+                throw new Error('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+            } else {
+                // Something happened in setting up the request
+                throw new Error('Đã xảy ra lỗi khi gửi yêu cầu. Vui lòng thử lại sau.');
+            }
         }
     }
 };
